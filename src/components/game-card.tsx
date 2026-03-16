@@ -1,66 +1,87 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gamepad2, Users, Clock } from "lucide-react";
+import { Users, MapPin, Star } from "lucide-react";
 import type { Game } from "@/lib/data";
-import { cn } from "@/lib/utils";
+import { getCategoryEmoji, getCategoryLabel, formatDistance } from "@/lib/data";
 
-const statusColors: Record<string, string> = {
-  available: "bg-green-500/20 text-green-400 border-green-500/30",
-  requested: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  "in-transit": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  borrowed: "bg-red-500/20 text-red-400 border-red-500/30",
+const conditionConfig: Record<string, { bg: string; text: string; label: string }> = {
+  "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", label: "Like New" },
+  good: { bg: "bg-sky-50", text: "text-sky-700", label: "Good" },
+  fair: { bg: "bg-amber-50", text: "text-amber-700", label: "Fair" },
 };
 
-const conditionLabels: Record<string, string> = {
-  "like-new": "Like New",
-  good: "Good",
-  fair: "Fair",
-};
+export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
+  const condition = conditionConfig[game.condition];
+  const hasPhoto = game.photos.length > 0;
 
-export function GameCard({ game }: { game: Game }) {
   return (
-    <Link href={`/game/${game.id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]">
-        <div className="relative h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <Gamepad2 className="h-12 w-12 text-primary/40 group-hover:text-primary/60 transition-colors" />
-          <Badge
-            variant="outline"
-            className={cn("absolute top-2 right-2 text-[10px]", statusColors[game.status])}
-          >
-            {game.status}
-          </Badge>
-        </div>
-        <CardContent className="p-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-semibold text-sm truncate">{game.name}</h3>
-              <p className="text-xs text-muted-foreground truncate" dir="rtl">
-                {game.nameHe}
-              </p>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      <Link href={`/game/${game.id}`}>
+        <Card className="group overflow-hidden border-0 elevation-2 hover:elevation-4 bg-white transition-shadow duration-300">
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
+            {/* Image */}
+            <div className="relative h-40 overflow-hidden">
+              {hasPhoto ? (
+                <Image
+                  src={game.photos[0]}
+                  alt={game.title}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  sizes="(max-width: 448px) 50vw, 224px"
+                />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-br from-primary/10 via-sunshine/10 to-coral/10 flex items-center justify-center">
+                  <span className="text-4xl">{getCategoryEmoji(game.category)}</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              <Badge
+                className={`absolute top-2.5 right-2.5 text-2xs border-0 font-medium ${condition.bg} ${condition.text}`}
+              >
+                {condition.label}
+              </Badge>
+              {game.handoffs > 0 && (
+                <div className="absolute top-2.5 left-2.5 glass rounded-full px-2.5 py-1 text-2xs font-semibold text-primary">
+                  {game.handoffs}x shared
+                </div>
+              )}
             </div>
-          </div>
-          <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {game.minPlayers}-{game.maxPlayers}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {game.ageRange}
-            </span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-              {conditionLabels[game.condition]}
-            </Badge>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <Badge variant="outline" className="text-[10px]">
-              {game.neighborhood}
-            </Badge>
-            <span className="text-[10px] text-muted-foreground">by {game.donorName}</span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+
+            <CardContent className="p-3.5">
+              <h3 className="font-semibold text-sm truncate leading-tight">{game.title}</h3>
+              <p className="text-2xs text-muted-foreground mt-1 font-medium">
+                {getCategoryLabel(game.category)}
+              </p>
+
+              <div className="mt-2.5 flex items-center gap-3 text-2xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-sunshine text-sunshine" />
+                  {game.rating.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {game.minPlayers === game.maxPlayers
+                    ? game.minPlayers
+                    : `${game.minPlayers}-${game.maxPlayers}`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {formatDistance(game)}
+                </span>
+              </div>
+            </CardContent>
+          </motion.div>
+        </Card>
+      </Link>
+    </motion.div>
   );
 }
