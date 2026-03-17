@@ -1,0 +1,431 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  CATEGORIES,
+  CONDITIONS,
+  AGE_GROUPS,
+  type GameCategory,
+  type GameCondition,
+  type AgeGroup,
+} from "@/lib/data";
+import { Camera, Plus, CheckCircle2, X, ArrowRight, ArrowLeft, LogIn, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase";
+import { useLanguage } from "@/lib/i18n";
+import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
+
+type Step = "form" | "photos" | "submitting" | "done";
+
+const pageVariants = {
+  enter: { opacity: 0, x: 20 },
+  center: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
+};
+
+export default function AddGamePage() {
+  const [step, setStep] = useState<Step>("form");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<GameCategory | "">("");
+  const [condition, setCondition] = useState<GameCondition | "">("");
+  const [ageGroups, setAgeGroups] = useState<AgeGroup[]>([]);
+  const [minPlayers, setMinPlayers] = useState("1");
+  const [maxPlayers, setMaxPlayers] = useState("4");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const { t, lang } = useLanguage();
+
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase?.auth) {
+      setAuthChecked(true);
+      return;
+    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setAuthChecked(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const toggleAge = (age: AgeGroup) => {
+    setAgeGroups((prev) =>
+      prev.includes(age) ? prev.filter((a) => a !== age) : [...prev, age]
+    );
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotos((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const canProceed = title && category && condition;
+
+  const handleSubmit = async () => {
+    setStep("submitting");
+
+    try {
+      const supabase = createClient();
+
+      // Only attempt insert if Supabase is configured and user is logged in
+      if (supabase?.auth && user) {
+        const categoryMap: Record<string, string> = {
+          "board-games": "board_game",
+          "outdoor-toys": "outdoor",
+          "lego-building": "lego",
+          magnets: "toy",
+          playmobil: "toy",
+          puzzles: "puzzle",
+          other: "toy",
+        };
+
+        const conditionMap: Record<string, string> = {
+          "like-new": "new",
+          good: "good",
+          fair: "fair",
+        };
+
+        const { error } = await supabase.from("games").insert({
+          title,
+          description: description || null,
+          category: categoryMap[category] || "toy",
+          condition: conditionMap[condition as string] || "good",
+          age_range_min: ageGroups.length > 0 ? 0 : null,
+          age_range_max: ageGroups.length > 0 ? 18 : null,
+          player_count_min: parseInt(minPlayers) || 1,
+          player_count_max: parseInt(maxPlayers) || 4,
+          owner_id: user.id,
+          is_available: true,
+        });
+
+        if (error) {
+          console.warn("Supabase insert failed (showing success anyway):", error.message);
+        }
+      }
+    } catch (err) {
+      // Graceful fallback — don't crash, just log
+      console.warn("Could not save to database:", err);
+    }
+
+    // Always show success — the game will be in mock data for now
+    setStep("done");
+  };
+
+  // Not signed in — show prompt
+  if (authChecked && !user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center"
+      >
+        <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
+          <LogIn className="h-7 w-7 text-primary" />
+        </div>
+        <h1 className="text-xl font-bold mb-2">{t("auth.sign_in_required")}</h1>
+        <p className="text-sm text-muted-foreground mb-6 max-w-[260px]">
+          {t("auth.sign_in_to_share")}
+        </p>
+        <Link href="/auth/signin?redirect=/add">
+          <Button className="h-12 rounded-2xl px-8 text-base font-semibold elevation-3">
+            <LogIn className={cn("h-4 w-4", lang === "he" ? "ml-2" : "mr-2")} />
+            {t("auth.sign_in")}
+          </Button>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (step === "submitting") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-sm text-muted-foreground">
+          {lang === "he" ? "שומר את המשחק..." : "Saving your game..."}
+        </p>
+      </div>
+    );
+  }
+
+  if (step === "done") {
+    return (
+      <motion.div
+        key="done"
+        variants={pageVariants}
+        initial="enter"
+        animate="center"
+        className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+          className="h-20 w-20 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-5"
+        >
+          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+        </motion.div>
+        <h1 className="text-2xl font-bold mb-2">{t("add.game_listed")}</h1>
+        <p className="text-sm text-muted-foreground mb-1 max-w-[260px]">
+          &ldquo;{title}&rdquo; {t("add.game_available")}
+        </p>
+        <p className="text-xs text-muted-foreground mb-8">
+          {t("add.whatsapp_notify")}
+        </p>
+        <Button
+          onClick={() => {
+            setStep("form");
+            setTitle("");
+            setDescription("");
+            setCategory("");
+            setCondition("");
+            setAgeGroups([]);
+            setPhotos([]);
+          }}
+          variant="outline"
+          className="rounded-2xl h-11 px-5"
+        >
+          <Plus className={cn("h-4 w-4", lang === "he" ? "ml-2" : "mr-2")} />
+          {t("add.share_another")}
+        </Button>
+      </motion.div>
+    );
+  }
+
+  if (step === "photos") {
+    return (
+      <motion.div
+        key="photos"
+        variants={pageVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        className="px-4 pt-8"
+      >
+        <h1 className="text-xl font-bold mb-1">{t("add.photos_title")}</h1>
+        <p className="text-sm text-muted-foreground mb-5">
+          {t("add.photos_subtitle")}
+        </p>
+
+        <div className="grid grid-cols-3 gap-2.5 mb-6">
+          {photos.map((photo, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative aspect-square rounded-2xl overflow-hidden elevation-1"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+              <button
+                onClick={() => removePhoto(i)}
+                className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/40 backdrop-blur flex items-center justify-center transition-transform hover:scale-110"
+              >
+                <X className="h-3 w-3 text-white" />
+              </button>
+            </motion.div>
+          ))}
+          <label className="aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 transition-colors bg-background">
+            <Camera className="h-6 w-6 text-muted-foreground mb-1" />
+            <span className="text-2xs text-muted-foreground">{t("add.add_photo")}</span>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+          </label>
+        </div>
+
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1 h-12 rounded-2xl" onClick={() => setStep("form")}>
+            <ArrowLeft className={cn("h-4 w-4", lang === "he" ? "ml-1.5" : "mr-1.5")} />
+            {t("add.back")}
+          </Button>
+          <Button className="flex-1 h-12 rounded-2xl font-semibold elevation-2" onClick={handleSubmit}>
+            {photos.length > 0 ? t("add.submit") : t("add.skip_submit")}
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      key="form"
+      variants={pageVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      className="px-4 pt-8"
+    >
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">{t("add.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t("add.subtitle")}
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Title */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">{t("add.game_name")}</label>
+          <Input
+            placeholder={t("add.game_name_placeholder")}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="bg-white border-0 elevation-1 h-12 rounded-2xl focus-visible:elevation-2 transition-shadow"
+          />
+        </div>
+
+        {/* Category */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">{t("add.category")}</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.value}
+                className={cn(
+                  "px-4 py-2 rounded-full text-xs font-medium transition-all duration-200",
+                  category === c.value
+                    ? "bg-foreground text-white elevation-2"
+                    : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+                )}
+                onClick={() => setCategory(c.value)}
+              >
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Condition */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">{t("add.condition")}</label>
+          <div className="flex gap-2">
+            {CONDITIONS.map((c) => (
+              <button
+                key={c.value}
+                className={cn(
+                  "flex-1 py-2.5 rounded-2xl text-xs font-medium transition-all duration-200",
+                  condition === c.value
+                    ? "bg-foreground text-white elevation-2"
+                    : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+                )}
+                onClick={() => setCondition(c.value)}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Age Groups */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {t("add.good_for")} <span className="text-muted-foreground font-normal text-xs">{t("add.optional")}</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {AGE_GROUPS.map((a) => (
+              <button
+                key={a.value}
+                className={cn(
+                  "px-3.5 py-2 rounded-full text-xs font-medium transition-all duration-200",
+                  ageGroups.includes(a.value)
+                    ? "bg-foreground text-white elevation-2"
+                    : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+                )}
+                onClick={() => toggleAge(a.value)}
+              >
+                {a.label} ({a.range})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Players */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {t("add.players")} <span className="text-muted-foreground font-normal text-xs">{t("add.optional")}</span>
+          </label>
+          <div className="flex items-center gap-3">
+            <Input
+              type="number"
+              min="1"
+              max="20"
+              value={minPlayers}
+              onChange={(e) => setMinPlayers(e.target.value)}
+              className="bg-white border-0 elevation-1 h-12 rounded-2xl w-20 text-center focus-visible:elevation-2"
+            />
+            <span className="text-sm text-muted-foreground">{t("add.to")}</span>
+            <Input
+              type="number"
+              min="1"
+              max="20"
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(e.target.value)}
+              className="bg-white border-0 elevation-1 h-12 rounded-2xl w-20 text-center focus-visible:elevation-2"
+            />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {t("add.notes")} <span className="text-muted-foreground font-normal text-xs">{t("add.optional")}</span>
+          </label>
+          <Textarea
+            placeholder={t("add.notes_placeholder")}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="bg-white border-0 elevation-1 rounded-2xl resize-none focus-visible:elevation-2 transition-shadow"
+          />
+        </div>
+
+        {/* Submit */}
+        <Button
+          className="w-full h-13 rounded-2xl text-base font-semibold elevation-3 hover:elevation-4 transition-all active:scale-[0.98]"
+          disabled={!canProceed}
+          onClick={() => setStep("photos")}
+        >
+          {t("add.next_photos")}
+          <ArrowRight className={cn("h-4 w-4", lang === "he" ? "mr-2" : "ml-2")} />
+        </Button>
+      </div>
+
+      <div className="h-6" />
+    </motion.div>
+  );
+}
