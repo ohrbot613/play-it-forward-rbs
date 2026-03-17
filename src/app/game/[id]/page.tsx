@@ -8,12 +8,7 @@ import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, f
 import { Button } from "@/components/ui/button";
 import { RequestGameModal } from "@/components/request-game-modal";
 import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
-
-const conditionConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400", label: "Like New" },
-  good: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-400", label: "Good" },
-  fair: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400", label: "Fair" },
-};
+import { useLanguage } from "@/lib/i18n";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -26,6 +21,7 @@ export default function GameDetailPage() {
   const game = getGame(id);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [localRequestCount, setLocalRequestCount] = useState(0);
+  const { t, lang } = useLanguage();
 
   if (!game) {
     return (
@@ -33,28 +29,44 @@ export default function GameDetailPage() {
         <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
           <span className="text-2xl">🔍</span>
         </div>
-        <p className="text-sm font-medium mb-1">Game not found</p>
-        <p className="text-xs text-muted-foreground mb-4">It may have been removed</p>
+        <p className="text-sm font-medium mb-1">{t("game.not_found")}</p>
+        <p className="text-xs text-muted-foreground mb-4">{t("game.may_removed")}</p>
         <Button variant="ghost" onClick={() => router.push("/")} className="text-sm">
-          Back to games
+          {t("game.back_to_games")}
         </Button>
       </div>
     );
   }
 
+  const conditionKeys: Record<string, { bg: string; text: string; dot: string; key: "game.like_new" | "game.good" | "game.fair" }> = {
+    "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400", key: "game.like_new" },
+    good: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-400", key: "game.good" },
+    fair: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400", key: "game.fair" },
+  };
+
   const whatsappUrl = formatWhatsAppRequest(game.currentHolder.phone, game.title, "Guest", game.ownershipType);
   const owner = getUser(game.ownerId);
-  const condition = conditionConfig[game.condition];
+  const condition = conditionKeys[game.condition];
+
+  const complexityMap: Record<string, "complexity.light" | "complexity.medium" | "complexity.heavy"> = {
+    light: "complexity.light",
+    medium: "complexity.medium",
+    heavy: "complexity.heavy",
+  };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${game.title} — Play it Forward`,
-        text: `Check out "${game.title}" on Play it Forward! Free game sharing in RBS.`,
+        title: `${game.title} — ${t("app.title")}`,
+        text: lang === "he"
+          ? `בדוק את "${game.title}" ב${t("app.title")}! שיתוף משחקים חינם ברמת בית שמש.`
+          : `Check out "${game.title}" on Play it Forward! Free game sharing in RBS.`,
         url: window.location.href,
       });
     }
   };
+
+  const totalInterested = game.requestCount + localRequestCount;
 
   return (
     <div>
@@ -84,30 +96,30 @@ export default function GameDetailPage() {
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="absolute top-4 left-4 h-9 w-9 rounded-full glass flex items-center justify-center transition-transform hover:scale-105"
+          className={`absolute top-4 ${lang === "he" ? "right-4" : "left-4"} h-9 w-9 rounded-full glass flex items-center justify-center transition-transform hover:scale-105`}
         >
-          <ArrowLeft className="h-4 w-4 text-foreground" />
+          <ArrowLeft className={`h-4 w-4 text-foreground ${lang === "he" ? "rotate-180" : ""}`} />
         </button>
 
         {/* Share button */}
         <button
           onClick={handleShare}
-          className="absolute top-4 right-4 h-9 w-9 rounded-full glass flex items-center justify-center transition-transform hover:scale-105"
+          className={`absolute top-4 ${lang === "he" ? "left-4" : "right-4"} h-9 w-9 rounded-full glass flex items-center justify-center transition-transform hover:scale-105`}
         >
           <Share2 className="h-4 w-4 text-foreground" />
         </button>
 
         {/* Condition badge */}
-        <div className={`absolute bottom-4 right-4 ${condition.bg} ${condition.text} rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5`}>
+        <div className={`absolute bottom-4 ${lang === "he" ? "left-4" : "right-4"} ${condition.bg} ${condition.text} rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5`}>
           <span className={`h-1.5 w-1.5 rounded-full ${condition.dot}`} />
-          {condition.label}
+          {t(condition.key)}
         </div>
 
         {/* Handoff counter */}
         {game.handoffs > 0 && (
-          <div className="absolute bottom-4 left-4 glass rounded-full px-3 py-1.5 text-xs font-semibold text-primary flex items-center gap-1.5">
+          <div className={`absolute bottom-4 ${lang === "he" ? "right-4" : "left-4"} glass rounded-full px-3 py-1.5 text-xs font-semibold text-primary flex items-center gap-1.5`}>
             <Repeat className="h-3 w-3" />
-            Shared {game.handoffs} times
+            {t("game.shared_times", { count: game.handoffs })}
           </div>
         )}
       </motion.div>
@@ -129,14 +141,14 @@ export default function GameDetailPage() {
           <div className="mt-2">
             {game.ownershipType === "donated" ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
-                Community Game
+                {t("game.community_game")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
-                On loan from {owner?.name ?? game.currentHolder.name}
+                {t("game.on_loan_from")} {owner?.name ?? game.currentHolder.name}
                 {owner && (
                   <span className="text-2xs text-amber-500 ml-1">
-                    Trust: {owner.trustScore}%
+                    {t("game.trust")}: {owner.trustScore}%
                   </span>
                 )}
               </span>
@@ -149,7 +161,7 @@ export default function GameDetailPage() {
               <Star className="h-4 w-4 fill-sunshine text-sunshine" />
               <span className="font-bold text-sm">{game.rating.toFixed(1)}</span>
             </div>
-            <span className="text-2xs text-muted-foreground">({game.reviewCount} reviews)</span>
+            <span className="text-2xs text-muted-foreground">({game.reviewCount} {t("game.reviews").toLowerCase()})</span>
           </div>
 
           {/* Details Grid */}
@@ -165,28 +177,28 @@ export default function GameDetailPage() {
                   ? game.minPlayers
                   : `${game.minPlayers}-${game.maxPlayers}`}
               </div>
-              <div className="text-2xs text-muted-foreground mt-0.5">Players</div>
+              <div className="text-2xs text-muted-foreground mt-0.5">{t("game.players")}</div>
             </div>
             <div className="rounded-2xl bg-background p-3 text-center">
               <Timer className="h-4 w-4 text-sunshine mx-auto mb-1.5" />
               <div className="text-2xs font-bold leading-tight">
                 {game.playTime}
               </div>
-              <div className="text-2xs text-muted-foreground mt-0.5">Time</div>
+              <div className="text-2xs text-muted-foreground mt-0.5">{t("game.time")}</div>
             </div>
             <div className="rounded-2xl bg-background p-3 text-center">
               <Brain className="h-4 w-4 text-coral mx-auto mb-1.5" />
               <div className="text-2xs font-bold capitalize">
-                {COMPLEXITY_LABELS[game.complexity]}
+                {complexityMap[game.complexity] ? t(complexityMap[game.complexity]) : COMPLEXITY_LABELS[game.complexity]}
               </div>
-              <div className="text-2xs text-muted-foreground mt-0.5">Level</div>
+              <div className="text-2xs text-muted-foreground mt-0.5">{t("game.level")}</div>
             </div>
             <div className="rounded-2xl bg-background p-3 text-center">
               <MapPin className="h-4 w-4 text-mint mx-auto mb-1.5" />
               <div className="text-2xs font-bold leading-tight">
                 {formatDistance(game)}
               </div>
-              <div className="text-2xs text-muted-foreground mt-0.5">Distance</div>
+              <div className="text-2xs text-muted-foreground mt-0.5">{t("game.distance")}</div>
             </div>
           </motion.div>
 
@@ -205,7 +217,7 @@ export default function GameDetailPage() {
             transition={{ duration: 0.4, delay: 0.25 }}
             className="mb-5"
           >
-            <h2 className="text-sm font-semibold mb-2">About this game</h2>
+            <h2 className="text-sm font-semibold mb-2">{t("game.about")}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{game.description}</p>
           </motion.div>
 
@@ -215,7 +227,7 @@ export default function GameDetailPage() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="mb-6 rounded-2xl bg-background p-4"
           >
-            <div className="text-2xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Currently with</div>
+            <div className="text-2xs text-muted-foreground font-medium uppercase tracking-wider mb-2">{t("game.currently_with")}</div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
@@ -231,7 +243,7 @@ export default function GameDetailPage() {
               </div>
               <div className="flex items-center gap-1 text-2xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                Listed {new Date(game.listedAt).toLocaleDateString("en-IL", { month: "short", day: "numeric" })}
+                {t("game.listed")} {new Date(game.listedAt).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", { month: "short", day: "numeric" })}
               </div>
             </div>
           </motion.div>
@@ -246,7 +258,7 @@ export default function GameDetailPage() {
                 transition={{ duration: 0.4, delay: 0.35 }}
                 className="mb-6"
               >
-                <h2 className="text-sm font-semibold mb-3">Reviews ({reviews.length})</h2>
+                <h2 className="text-sm font-semibold mb-3">{t("game.reviews")} ({reviews.length})</h2>
                 <div className="space-y-3">
                   {reviews.slice(0, 5).map((review) => {
                     const reviewer = getUser(review.userId);
@@ -273,12 +285,12 @@ export default function GameDetailPage() {
                         <p className="text-xs text-muted-foreground leading-relaxed">{review.text}</p>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-2xs text-muted-foreground">
-                            {new Date(review.createdAt).toLocaleDateString("en-IL", { month: "short", day: "numeric" })}
+                            {new Date(review.createdAt).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", { month: "short", day: "numeric" })}
                           </span>
                           {review.helpful > 0 && (
                             <span className="flex items-center gap-1 text-2xs text-muted-foreground">
                               <ThumbsUp className="h-3 w-3" />
-                              {review.helpful} helpful
+                              {review.helpful} {t("game.helpful")}
                             </span>
                           )}
                         </div>
@@ -291,7 +303,7 @@ export default function GameDetailPage() {
           })()}
 
           {/* Interest Indicator */}
-          {(game.requestCount + localRequestCount > 0) && (
+          {(totalInterested > 0) && (
             <motion.div
               {...fadeUp}
               transition={{ duration: 0.4, delay: 0.33 }}
@@ -299,7 +311,9 @@ export default function GameDetailPage() {
             >
               <Hand className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-primary">
-                {game.requestCount + localRequestCount} {game.requestCount + localRequestCount === 1 ? "person" : "people"} interested
+                {totalInterested === 1
+                  ? t("game.person_interested")
+                  : t("game.people_interested", { count: totalInterested })}
               </span>
             </motion.div>
           )}
@@ -319,33 +333,33 @@ export default function GameDetailPage() {
                   className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#1eba59] text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98]"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  Request via WhatsApp
+                  {t("game.request_whatsapp")}
                 </a>
                 <button
                   onClick={() => setRequestModalOpen(true)}
                   className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hand className="h-4 w-4" />
-                  Express Interest
+                  {t("game.express_interest")}
                 </button>
                 <p className="text-center text-2xs text-muted-foreground mt-2">
-                  WhatsApp messages the holder directly. Express Interest notifies them you&apos;re interested.
+                  {t("game.whatsapp_help")}
                 </p>
               </>
             ) : (
               <>
                 <div className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-muted text-muted-foreground font-semibold text-base cursor-not-allowed">
-                  Currently Unavailable
+                  {t("game.currently_unavailable")}
                 </div>
                 <button
                   onClick={() => setRequestModalOpen(true)}
                   className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hand className="h-4 w-4" />
-                  Notify Me When Available
+                  {t("game.notify_available")}
                 </button>
                 <p className="text-center text-2xs text-muted-foreground mt-2">
-                  Get notified when this game becomes available again
+                  {t("game.notify_help")}
                 </p>
               </>
             )}

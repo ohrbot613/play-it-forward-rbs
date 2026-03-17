@@ -8,14 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Users, MapPin, Star, Hand } from "lucide-react";
 import type { Game } from "@/lib/data";
 import { getCategoryEmoji, getCategoryLabel, formatDistance } from "@/lib/data";
-
-const conditionConfig: Record<string, { bg: string; text: string; label: string }> = {
-  "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", label: "Like New" },
-  good: { bg: "bg-sky-50", text: "text-sky-700", label: "Good" },
-  fair: { bg: "bg-amber-50", text: "text-amber-700", label: "Fair" },
-};
+import { useLanguage } from "@/lib/i18n";
 
 export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
+  const { t } = useLanguage();
+
+  const conditionConfig: Record<string, { bg: string; text: string; key: "game.like_new" | "game.good" | "game.fair" }> = {
+    "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", key: "game.like_new" },
+    good: { bg: "bg-sky-50", text: "text-sky-700", key: "game.good" },
+    fair: { bg: "bg-amber-50", text: "text-amber-700", key: "game.fair" },
+  };
+
   const condition = conditionConfig[game.condition];
   const hasPhoto = game.photos.length > 0;
 
@@ -47,29 +50,29 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
               <Badge
                 className={`absolute top-2.5 right-2.5 text-2xs border-0 font-medium ${condition.bg} ${condition.text}`}
               >
-                {condition.label}
+                {t(condition.key)}
               </Badge>
               {game.handoffs > 0 && (
                 <div className="absolute top-2.5 left-2.5 glass rounded-full px-2.5 py-1 text-2xs font-semibold text-primary">
-                  {game.handoffs}x shared
+                  {t("game.shared_x", { count: game.handoffs })}
                 </div>
               )}
               {/* Ownership badge */}
               {game.ownershipType === "lent" && (
                 <div className="absolute bottom-2 left-2 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-2xs font-medium">
-                  On Loan
+                  {t("game.on_loan")}
                 </div>
               )}
               {game.ownershipType === "donated" && (
                 <div className="absolute bottom-2 left-2 bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-2xs font-medium">
-                  Community Game
+                  {t("game.community_game")}
                 </div>
               )}
               {/* Unavailable overlay */}
               {!game.available && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <span className="bg-white/90 text-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
-                    Currently Out
+                    {t("game.currently_out")}
                   </span>
                 </div>
               )}

@@ -5,22 +5,24 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, PlusCircle, User, MapPin, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 
-const links = [
-  { href: "/", label: "Browse", icon: Search },
-  { href: "/map", label: "Map", icon: MapPin },
-  { href: "/add", label: "Share", icon: PlusCircle },
-  { href: "/requests", label: "Wishes", icon: Heart },
-  { href: "/profile", label: "Profile", icon: User },
+const links: { href: string; labelKey: TranslationKey; icon: typeof Search }[] = [
+  { href: "/", labelKey: "nav.browse", icon: Search },
+  { href: "/map", labelKey: "nav.map", icon: MapPin },
+  { href: "/add", labelKey: "nav.share", icon: PlusCircle },
+  { href: "/requests", labelKey: "nav.wishes", icon: Heart },
+  { href: "/profile", labelKey: "nav.profile", icon: User },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 glass">
       <div className="mx-auto flex max-w-md items-center justify-around py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        {links.map(({ href, label, icon: Icon }) => {
+        {links.map(({ href, labelKey, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
@@ -41,7 +43,7 @@ export function BottomNav() {
                 />
               )}
               <Icon className={cn("h-5 w-5 transition-all", active && "stroke-[2.5]")} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </Link>
           );
         })}

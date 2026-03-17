@@ -6,6 +6,7 @@ import { X, Hand, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useLanguage } from "@/lib/i18n";
 
 interface RequestGameModalProps {
   gameTitle: string;
@@ -18,6 +19,7 @@ export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: Reque
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,16 +68,16 @@ export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: Reque
                   <div className="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
                     <CheckCircle className="h-7 w-7 text-emerald-500" />
                   </div>
-                  <p className="text-base font-semibold">Request Sent!</p>
+                  <p className="text-base font-semibold">{t("modal.request_sent")}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    The holder will be notified
+                    {t("modal.holder_notified")}
                   </p>
                 </motion.div>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h2 className="text-lg font-bold">Request This Game</h2>
+                      <h2 className="text-lg font-bold">{t("modal.request_title")}</h2>
                       <p className="text-sm text-muted-foreground mt-0.5">
                         {gameTitle}
                       </p>
@@ -91,12 +93,12 @@ export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: Reque
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Your Name
+                        {t("modal.your_name")}
                       </label>
                       <Input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your name"
+                        placeholder={t("modal.enter_name")}
                         className="h-12 rounded-2xl bg-background border-0 text-sm"
                         required
                       />
@@ -104,12 +106,12 @@ export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: Reque
 
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Message (optional)
+                        {t("modal.message")}
                       </label>
                       <Textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="e.g. We'd love to borrow this for Shabbat!"
+                        placeholder={t("modal.message_placeholder")}
                         className="rounded-2xl bg-background border-0 text-sm min-h-[80px] resize-none"
                       />
                     </div>
@@ -120,7 +122,7 @@ export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: Reque
                       className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98] flex items-center justify-center gap-2.5"
                     >
                       <Hand className="h-5 w-5" />
-                      Send Request
+                      {t("modal.send_request")}
                     </Button>
                   </form>
                 </>

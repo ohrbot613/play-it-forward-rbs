@@ -26,12 +26,7 @@ import {
   HandHeart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STATUS_TABS = [
-  { value: "open" as const, label: "Open" },
-  { value: "matched" as const, label: "Matched" },
-  { value: "fulfilled" as const, label: "Fulfilled" },
-];
+import { useLanguage } from "@/lib/i18n";
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -50,6 +45,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
   const urgency = URGENCY_CONFIG[wish.urgency];
   const isFulfilled = wish.status === "fulfilled";
   const isMatched = wish.status === "matched";
+  const { t } = useLanguage();
 
   return (
     <motion.div
@@ -86,7 +82,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
                   <Badge
                     className={`text-2xs border-0 font-medium ${urgency.bg} ${urgency.color}`}
                   >
-                    {urgency.label}
+                    {t("urgency.high")}
                   </Badge>
                 )}
               </div>
@@ -133,17 +129,17 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
                 <Badge
                   className={`text-2xs border-0 font-medium ${urgency.bg} ${urgency.color}`}
                 >
-                  {urgency.label}
+                  {wish.urgency === "normal" ? t("urgency.normal") : t("urgency.low")}
                 </Badge>
               )}
               {isFulfilled && (
                 <Badge className="text-2xs border-0 font-medium bg-emerald-50 text-emerald-700">
-                  Fulfilled
+                  {t("wishes.fulfilled")}
                 </Badge>
               )}
               {isMatched && (
                 <Badge className="text-2xs border-0 font-medium bg-primary/10 text-primary">
-                  Match found
+                  {t("wishes.match_found")}
                 </Badge>
               )}
             </div>
@@ -164,6 +160,13 @@ export default function RequestsPage() {
   const [statusFilter, setStatusFilter] = useState<
     "open" | "matched" | "fulfilled"
   >("open");
+  const { t, lang } = useLanguage();
+
+  const STATUS_TABS: { value: "open" | "matched" | "fulfilled"; labelKey: "wishes.open" | "wishes.matched" | "wishes.fulfilled" }[] = [
+    { value: "open", labelKey: "wishes.open" },
+    { value: "matched", labelKey: "wishes.matched" },
+    { value: "fulfilled", labelKey: "wishes.fulfilled" },
+  ];
 
   const wishes = useMemo(() => {
     let filtered = MOCK_WISHES.filter((w) => w.status === statusFilter);
@@ -209,23 +212,23 @@ export default function RequestsPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-64 bg-gradient-to-b from-coral/[0.04] via-sunshine/[0.03] to-transparent -z-10 rounded-b-[40%]" />
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">
-            Community Wishes
+            {t("wishes.title")}
           </h1>
           <Heart className="h-5 w-5 text-coral" />
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px]">
-          Games your neighbors are looking for
+          {t("wishes.subtitle")}
         </p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-coral" />
             <span className="font-medium text-foreground">{openCount}</span>{" "}
-            open wishes
+            {t("wishes.open_wishes")}
           </span>
           <span className="text-border">|</span>
           <span className="flex items-center gap-1.5">
             <HandHeart className="h-3.5 w-3.5" />
-            Can you help?
+            {t("wishes.can_you_help")}
           </span>
         </div>
       </motion.div>
@@ -238,12 +241,12 @@ export default function RequestsPage() {
         className="mb-4"
       >
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground", lang === "he" ? "right-3.5" : "left-3.5")} />
           <Input
-            placeholder="Search wishes..."
+            placeholder={t("search.wishes_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-white border-0 elevation-1 h-12 rounded-2xl text-sm focus-visible:elevation-2 transition-shadow"
+            className={cn("bg-white border-0 elevation-1 h-12 rounded-2xl text-sm focus-visible:elevation-2 transition-shadow", lang === "he" ? "pr-10 pl-10" : "pl-10")}
           />
           <AnimatePresence>
             {search && (
@@ -252,7 +255,7 @@ export default function RequestsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={() => setSearch("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-muted flex items-center justify-center"
+                className={cn("absolute top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-muted flex items-center justify-center", lang === "he" ? "left-3.5" : "right-3.5")}
               >
                 <X className="h-3 w-3 text-muted-foreground" />
               </motion.button>
@@ -281,7 +284,7 @@ export default function RequestsPage() {
               )}
               onClick={() => setStatusFilter(tab.value)}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           );
         })}
@@ -294,7 +297,7 @@ export default function RequestsPage() {
         transition={{ duration: 0.4, delay: 0.15 }}
         className="mb-4 flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
       >
-        {[{ value: "all" as const, label: "All", emoji: "" }, ...CATEGORIES].map(
+        {[{ value: "all" as const, label: t("category.all"), emoji: "" }, ...CATEGORIES].map(
           (c) => {
             const isActive = category === c.value;
             return (
@@ -309,7 +312,7 @@ export default function RequestsPage() {
                 onClick={() => setCategory(c.value)}
               >
                 {c.emoji ? `${c.emoji} ` : ""}
-                {c.label}
+                {c.value === "all" ? c.label : c.label}
               </button>
             );
           }
@@ -318,7 +321,7 @@ export default function RequestsPage() {
 
       {/* Results count */}
       <div className="mb-3 text-xs text-muted-foreground">
-        {wishes.length} {wishes.length === 1 ? "wish" : "wishes"}
+        {wishes.length} {wishes.length === 1 ? t("wishes.wish") : t("wishes.wishes_count")}
       </div>
 
       {/* Wish Cards */}
@@ -341,12 +344,12 @@ export default function RequestsPage() {
               <Sparkles className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium text-foreground mb-1">
-              No wishes here
+              {t("wishes.no_wishes")}
             </p>
             <p className="text-xs text-muted-foreground">
               {statusFilter === "open"
-                ? "All wishes have been fulfilled! Check back later."
-                : `No ${statusFilter} wishes right now.`}
+                ? t("wishes.all_fulfilled")
+                : t("wishes.no_status", { status: statusFilter })}
             </p>
           </motion.div>
         )}

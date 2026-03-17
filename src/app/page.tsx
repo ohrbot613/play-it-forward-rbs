@@ -4,10 +4,11 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, getAvailableGames, type GameCategory, type SortOption } from "@/lib/data";
+import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, type GameCategory, type SortOption } from "@/lib/data";
 import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed } from "@/components/activity-feed";
+import { useLanguage } from "@/lib/i18n";
 
 const DISTANCE_OPTIONS = [
   { label: "0.5km", value: 0.5 },
@@ -17,12 +18,21 @@ const DISTANCE_OPTIONS = [
   { label: "10km+", value: "all" as const },
 ];
 
+const SORT_KEYS: Record<string, string> = {
+  closest: "sort.closest",
+  newest: "sort.newest",
+  "top-rated": "sort.top_rated",
+  "most-shared": "sort.most_shared",
+  category: "sort.category",
+};
+
 export default function HomePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<GameCategory | "all">("all");
   const [sort, setSort] = useState<SortOption>("closest");
   const [maxDistance, setMaxDistance] = useState<number | "all">("all");
   const [availableOnly, setAvailableOnly] = useState(false);
+  const { t, lang } = useLanguage();
 
   const games = useMemo(() => {
     let filtered = MOCK_GAMES;
@@ -78,21 +88,21 @@ export default function HomePage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-64 bg-gradient-to-b from-primary/[0.04] via-sunshine/[0.03] to-transparent -z-10 rounded-b-[40%]" />
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">
-            Play it Forward
+            {t("app.title")}
           </h1>
           <Sparkles className="h-5 w-5 text-sunshine" />
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">
-          Free game sharing across Ramat Beit Shemesh
+          {t("app.subtitle")}
         </p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="font-medium text-foreground">{MOCK_GAMES.length}</span> games live
+            <span className="font-medium text-foreground">{MOCK_GAMES.length}</span> {t("app.games_live")}
           </span>
           <span className="text-border">|</span>
           <span>
-            <span className="font-medium text-foreground">{totalShares}</span> shares & counting
+            <span className="font-medium text-foreground">{totalShares}</span> {t("app.shares_counting")}
           </span>
         </div>
       </motion.div>
@@ -105,12 +115,12 @@ export default function HomePage() {
         className="mb-4"
       >
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground", lang === "he" ? "right-3.5" : "left-3.5")} />
           <Input
-            placeholder="Search games..."
+            placeholder={t("search.placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-white border-0 elevation-1 h-12 rounded-2xl text-sm focus-visible:elevation-2 transition-shadow"
+            className={cn("bg-white border-0 elevation-1 h-12 rounded-2xl text-sm focus-visible:elevation-2 transition-shadow", lang === "he" ? "pr-10 pl-10" : "pl-10")}
           />
           <AnimatePresence>
             {search && (
@@ -119,7 +129,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={() => setSearch("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-muted flex items-center justify-center"
+                className={cn("absolute top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-muted flex items-center justify-center", lang === "he" ? "left-3.5" : "right-3.5")}
               >
                 <X className="h-3 w-3 text-muted-foreground" />
               </motion.button>
@@ -135,7 +145,7 @@ export default function HomePage() {
         transition={{ duration: 0.4, delay: 0.15 }}
         className="mb-4 flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
       >
-        {[{ value: "all" as const, label: "All", emoji: "" }, ...CATEGORIES].map((c) => {
+        {[{ value: "all" as const, label: t("category.all"), emoji: "" }, ...CATEGORIES].map((c) => {
           const isActive = category === c.value;
           return (
             <button
@@ -148,7 +158,7 @@ export default function HomePage() {
               )}
               onClick={() => setCategory(c.value)}
             >
-              {c.emoji ? `${c.emoji} ` : ""}{c.label}
+              {c.emoji ? `${c.emoji} ` : ""}{c.value === "all" ? c.label : c.label}
             </button>
           );
         })}
@@ -202,13 +212,13 @@ export default function HomePage() {
           />
         </button>
         <span className="text-xs text-muted-foreground font-medium">
-          {availableOnly ? "Available only" : "All games"}
+          {availableOnly ? t("filter.available_only") : t("filter.all_games")}
         </span>
       </motion.div>
 
       {/* Stats + Sort */}
       <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{games.length} results</span>
+        <span>{games.length} {t("filter.results")}</span>
         <div className="relative">
           <select
             value={sort}
@@ -217,7 +227,7 @@ export default function HomePage() {
           >
             {SORT_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
-                {s.label}
+                {SORT_KEYS[s.value] ? t(SORT_KEYS[s.value] as keyof typeof SORT_KEYS & string as never) : s.label}
               </option>
             ))}
           </select>
@@ -246,9 +256,9 @@ export default function HomePage() {
             <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Search className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">No games found</p>
+            <p className="text-sm font-medium text-foreground mb-1">{t("empty.no_games")}</p>
             <p className="text-xs text-muted-foreground">
-              Try adjusting your search or filters
+              {t("empty.adjust_filters")}
             </p>
           </motion.div>
         )}

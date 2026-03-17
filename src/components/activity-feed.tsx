@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Package, UserPlus, Heart, Repeat, Gift, Star, Hand, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 type ActivityType = "game-added" | "request-fulfilled" | "new-member" | "game-shared" | "game-donated" | "review" | "request" | "milestone";
 
@@ -127,6 +128,8 @@ function timeAgo(timestamp: string): string {
 }
 
 export function ActivityFeed() {
+  const { t } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -135,8 +138,8 @@ export function ActivityFeed() {
       className="mt-8 mb-6"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-bold tracking-tight">Community Activity</h2>
-        <span className="text-2xs text-muted-foreground font-medium">Live feed</span>
+        <h2 className="text-base font-bold tracking-tight">{t("activity.title")}</h2>
+        <span className="text-2xs text-muted-foreground font-medium">{t("activity.live")}</span>
       </div>
 
       <div className="space-y-2.5">
