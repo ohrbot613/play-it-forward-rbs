@@ -4,14 +4,25 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, type GameCategory, type SortOption } from "@/lib/data";
+import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, getAvailableGames, type GameCategory, type SortOption } from "@/lib/data";
 import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ActivityFeed } from "@/components/activity-feed";
+
+const DISTANCE_OPTIONS = [
+  { label: "0.5km", value: 0.5 },
+  { label: "1km", value: 1 },
+  { label: "2km", value: 2 },
+  { label: "5km", value: 5 },
+  { label: "10km+", value: "all" as const },
+];
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<GameCategory | "all">("all");
   const [sort, setSort] = useState<SortOption>("closest");
+  const [maxDistance, setMaxDistance] = useState<number | "all">("all");
+  const [availableOnly, setAvailableOnly] = useState(false);
 
   const games = useMemo(() => {
     let filtered = MOCK_GAMES;
@@ -29,6 +40,14 @@ export default function HomePage() {
       );
     }
 
+    if (maxDistance !== "all") {
+      filtered = filtered.filter((g) => getDistance(g) <= maxDistance);
+    }
+
+    if (availableOnly) {
+      filtered = filtered.filter((g) => g.available);
+    }
+
     const sorted = [...filtered];
     if (sort === "closest") {
       sorted.sort((a, b) => getDistance(a) - getDistance(b));
@@ -43,7 +62,7 @@ export default function HomePage() {
     }
 
     return sorted;
-  }, [search, category, sort]);
+  }, [search, category, sort, maxDistance, availableOnly]);
 
   const totalShares = MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0);
 
@@ -135,6 +154,58 @@ export default function HomePage() {
         })}
       </motion.div>
 
+      {/* Distance Filter */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.18 }}
+        className="mb-3 flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
+      >
+        {DISTANCE_OPTIONS.map((d) => {
+          const isActive = maxDistance === d.value;
+          return (
+            <button
+              key={d.label}
+              className={cn(
+                "shrink-0 px-3.5 py-1.5 rounded-full text-2xs font-medium transition-all duration-200",
+                isActive
+                  ? "bg-primary text-white elevation-2"
+                  : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+              )}
+              onClick={() => setMaxDistance(d.value)}
+            >
+              {d.label}
+            </button>
+          );
+        })}
+      </motion.div>
+
+      {/* Availability Toggle */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="mb-4 flex items-center gap-2"
+      >
+        <button
+          onClick={() => setAvailableOnly(!availableOnly)}
+          className={cn(
+            "relative h-6 w-11 rounded-full transition-colors duration-200",
+            availableOnly ? "bg-primary" : "bg-border"
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white elevation-1 transition-transform duration-200",
+              availableOnly && "translate-x-5"
+            )}
+          />
+        </button>
+        <span className="text-xs text-muted-foreground font-medium">
+          {availableOnly ? "Available only" : "All games"}
+        </span>
+      </motion.div>
+
       {/* Stats + Sort */}
       <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
         <span>{games.length} results</span>
@@ -160,6 +231,9 @@ export default function HomePage() {
           <GameCard key={game.id} game={game} index={i} />
         ))}
       </div>
+
+      {/* Activity Feed */}
+      <ActivityFeed />
 
       <AnimatePresence>
         {games.length === 0 && (

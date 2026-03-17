@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, formatWhatsAppLink, formatDistance, COMPLEXITY_LABELS } from "@/lib/data";
+import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, formatWhatsAppLink, formatWhatsAppRequest, formatDistance, canBorrow, COMPLEXITY_LABELS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp } from "lucide-react";
+import { RequestGameModal } from "@/components/request-game-modal";
+import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
 
 const conditionConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   "like-new": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400", label: "Like New" },
@@ -22,6 +24,8 @@ export default function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const game = getGame(id);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [localRequestCount, setLocalRequestCount] = useState(0);
 
   if (!game) {
     return (
@@ -38,7 +42,8 @@ export default function GameDetailPage() {
     );
   }
 
-  const whatsappUrl = formatWhatsAppLink(game.currentHolder.phone, game.title);
+  const whatsappUrl = formatWhatsAppRequest(game.currentHolder.phone, game.title, "Guest", game.ownershipType);
+  const owner = getUser(game.ownerId);
   const condition = conditionConfig[game.condition];
 
   const handleShare = () => {
@@ -119,6 +124,24 @@ export default function GameDetailPage() {
           <p className="text-sm text-muted-foreground mt-1 font-medium">
             {getCategoryLabel(game.category)}
           </p>
+
+          {/* Ownership Badge */}
+          <div className="mt-2">
+            {game.ownershipType === "donated" ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                Community Game
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
+                On loan from {owner?.name ?? game.currentHolder.name}
+                {owner && (
+                  <span className="text-2xs text-amber-500 ml-1">
+                    Trust: {owner.trustScore}%
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
 
           {/* Rating */}
           <div className="flex items-center gap-2 mt-2">
@@ -267,25 +290,73 @@ export default function GameDetailPage() {
             );
           })()}
 
-          {/* WhatsApp CTA */}
+          {/* Interest Indicator */}
+          {(game.requestCount + localRequestCount > 0) && (
+            <motion.div
+              {...fadeUp}
+              transition={{ duration: 0.4, delay: 0.33 }}
+              className="mb-4 flex items-center gap-2 px-4 py-3 rounded-2xl bg-primary/5"
+            >
+              <Hand className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                {game.requestCount + localRequestCount} {game.requestCount + localRequestCount === 1 ? "person" : "people"} interested
+              </span>
+            </motion.div>
+          )}
+
+          {/* Action Buttons */}
           <motion.div
             {...fadeUp}
             transition={{ duration: 0.4, delay: 0.35 }}
-            className="pb-8"
+            className="pb-8 space-y-3"
           >
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#1eba59] text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98]"
-            >
-              <MessageCircle className="h-5 w-5" />
-              Request via WhatsApp
-            </a>
-            <p className="text-center text-2xs text-muted-foreground mt-3">
-              Opens WhatsApp to message {game.currentHolder.name} directly
-            </p>
+            {game.available ? (
+              <>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#1eba59] text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98]"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Request via WhatsApp
+                </a>
+                <button
+                  onClick={() => setRequestModalOpen(true)}
+                  className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
+                >
+                  <Hand className="h-4 w-4" />
+                  Express Interest
+                </button>
+                <p className="text-center text-2xs text-muted-foreground mt-2">
+                  WhatsApp messages the holder directly. Express Interest notifies them you&apos;re interested.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-muted text-muted-foreground font-semibold text-base cursor-not-allowed">
+                  Currently Unavailable
+                </div>
+                <button
+                  onClick={() => setRequestModalOpen(true)}
+                  className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
+                >
+                  <Hand className="h-4 w-4" />
+                  Notify Me When Available
+                </button>
+                <p className="text-center text-2xs text-muted-foreground mt-2">
+                  Get notified when this game becomes available again
+                </p>
+              </>
+            )}
           </motion.div>
+
+          <RequestGameModal
+            gameTitle={game.title}
+            isOpen={requestModalOpen}
+            onClose={() => setRequestModalOpen(false)}
+            onSubmit={() => setLocalRequestCount((c) => c + 1)}
+          />
         </motion.div>
       </div>
     </div>

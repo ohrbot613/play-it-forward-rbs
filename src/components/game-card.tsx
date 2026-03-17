@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, MapPin, Star } from "lucide-react";
+import { Users, MapPin, Star, Hand } from "lucide-react";
 import type { Game } from "@/lib/data";
 import { getCategoryEmoji, getCategoryLabel, formatDistance } from "@/lib/data";
 
@@ -54,6 +54,25 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
                   {game.handoffs}x shared
                 </div>
               )}
+              {/* Ownership badge */}
+              {game.ownershipType === "lent" && (
+                <div className="absolute bottom-2 left-2 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-2xs font-medium">
+                  On Loan
+                </div>
+              )}
+              {game.ownershipType === "donated" && (
+                <div className="absolute bottom-2 left-2 bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-2xs font-medium">
+                  Community Game
+                </div>
+              )}
+              {/* Unavailable overlay */}
+              {!game.available && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="bg-white/90 text-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
+                    Currently Out
+                  </span>
+                </div>
+              )}
             </div>
 
             <CardContent className="p-3.5">
@@ -77,6 +96,12 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
                   <MapPin className="h-3 w-3" />
                   {formatDistance(game)}
                 </span>
+                {game.requestCount > 0 && (
+                  <span className="flex items-center gap-1 text-primary font-medium">
+                    <Hand className="h-3 w-3" />
+                    {game.requestCount}
+                  </span>
+                )}
               </div>
             </CardContent>
           </motion.div>

@@ -80,6 +80,7 @@ export interface Game {
   ownerId: string;
   lentSince?: string; // ISO date, only for lent games
   available: boolean;
+  requestCount: number;
 }
 
 export interface GameRequest {
@@ -480,6 +481,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u1",
     available: true,
+    requestCount: 3,
   },
   {
     id: "2",
@@ -501,6 +503,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u2",
     available: true,
+    requestCount: 0,
   },
   {
     id: "3",
@@ -522,6 +525,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u5",
     available: true,
+    requestCount: 5,
   },
   {
     id: "4",
@@ -543,6 +547,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u10",
     available: true,
+    requestCount: 2,
   },
   {
     id: "5",
@@ -564,6 +569,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u3",
     available: true,
+    requestCount: 0,
   },
   {
     id: "6",
@@ -585,6 +591,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u10",
     available: true,
+    requestCount: 8,
   },
   {
     id: "7",
@@ -607,6 +614,7 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u1",
     lentSince: "2026-01-15",
     available: true,
+    requestCount: 1,
   },
   {
     id: "8",
@@ -629,6 +637,7 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u8",
     lentSince: "2025-12-20",
     available: true,
+    requestCount: 0,
   },
   {
     id: "9",
@@ -651,6 +660,7 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u3",
     lentSince: "2026-02-10",
     available: true,
+    requestCount: 4,
   },
   {
     id: "10",
@@ -672,6 +682,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u9",
     available: false,
+    requestCount: 6,
   },
   {
     id: "11",
@@ -693,6 +704,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u15",
     available: true,
+    requestCount: 0,
   },
   {
     id: "12",
@@ -714,6 +726,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u14",
     available: true,
+    requestCount: 2,
   },
   {
     id: "13",
@@ -735,6 +748,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u3",
     available: true,
+    requestCount: 0,
   },
   {
     id: "14",
@@ -756,6 +770,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u7",
     available: true,
+    requestCount: 3,
   },
   {
     id: "15",
@@ -777,6 +792,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u10",
     available: true,
+    requestCount: 7,
   },
   {
     id: "16",
@@ -798,6 +814,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u6",
     available: true,
+    requestCount: 1,
   },
   {
     id: "17",
@@ -819,6 +836,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u12",
     available: true,
+    requestCount: 0,
   },
   {
     id: "18",
@@ -840,6 +858,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u1",
     available: true,
+    requestCount: 0,
   },
 
   // ── OUTDOOR TOYS (8) ─────────────────────────────────────────────
@@ -863,6 +882,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u7",
     available: true,
+    requestCount: 4,
   },
   {
     id: "20",
@@ -884,6 +904,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u11",
     available: true,
+    requestCount: 2,
   },
   {
     id: "21",
@@ -905,6 +926,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u11",
     available: true,
+    requestCount: 0,
   },
   {
     id: "22",
@@ -926,6 +948,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u4",
     available: true,
+    requestCount: 5,
   },
   {
     id: "23",
@@ -947,6 +970,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u12",
     available: true,
+    requestCount: 0,
   },
   {
     id: "24",
@@ -968,6 +992,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u14",
     available: true,
+    requestCount: 1,
   },
   {
     id: "25",
@@ -989,6 +1014,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u15",
     available: true,
+    requestCount: 3,
   },
   {
     id: "26",
@@ -1010,6 +1036,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u5",
     available: true,
+    requestCount: 0,
   },
 
   // ── LEGO / BUILDING (9) ──────────────────────────────────────────
@@ -1033,6 +1060,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u4",
     available: true,
+    requestCount: 0,
   },
   {
     id: "28",
@@ -1054,6 +1082,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u4",
     available: true,
+    requestCount: 6,
   },
   {
     id: "29",
@@ -1075,6 +1104,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u8",
     available: true,
+    requestCount: 2,
   },
   {
     id: "30",
@@ -1096,6 +1126,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u13",
     available: true,
+    requestCount: 0,
   },
   {
     id: "31",
@@ -1117,6 +1148,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u1",
     available: true,
+    requestCount: 1,
   },
   {
     id: "32",
@@ -1138,6 +1170,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u6",
     available: true,
+    requestCount: 4,
   },
   {
     id: "33",
@@ -1159,6 +1192,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u2",
     available: true,
+    requestCount: 0,
   },
   {
     id: "34",
@@ -1180,6 +1214,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u8",
     available: true,
+    requestCount: 0,
   },
   {
     id: "35",
@@ -1201,6 +1236,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u13",
     available: true,
+    requestCount: 3,
   },
 
   // ── MAGNETS (7) ──────────────────────────────────────────────────
@@ -1224,6 +1260,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u3",
     available: true,
+    requestCount: 2,
   },
   {
     id: "37",
@@ -1245,6 +1282,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u8",
     available: true,
+    requestCount: 0,
   },
   {
     id: "38",
@@ -1266,6 +1304,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u12",
     available: true,
+    requestCount: 5,
   },
   {
     id: "39",
@@ -1287,6 +1326,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u8",
     available: true,
+    requestCount: 1,
   },
   {
     id: "40",
@@ -1308,6 +1348,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u1",
     available: true,
+    requestCount: 0,
   },
   {
     id: "41",
@@ -1329,6 +1370,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u9",
     available: true,
+    requestCount: 0,
   },
   {
     id: "42",
@@ -1350,6 +1392,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u6",
     available: true,
+    requestCount: 2,
   },
 
   // ── PLAYMOBIL (6) ────────────────────────────────────────────────
@@ -1373,6 +1416,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u6",
     available: true,
+    requestCount: 3,
   },
   {
     id: "44",
@@ -1394,6 +1438,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u13",
     available: true,
+    requestCount: 0,
   },
   {
     id: "45",
@@ -1415,6 +1460,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u15",
     available: true,
+    requestCount: 1,
   },
   {
     id: "46",
@@ -1436,6 +1482,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u7",
     available: true,
+    requestCount: 0,
   },
   {
     id: "47",
@@ -1457,6 +1504,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u5",
     available: true,
+    requestCount: 4,
   },
   {
     id: "48",
@@ -1478,6 +1526,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u4",
     available: true,
+    requestCount: 2,
   },
 
   // ── PUZZLES (7) ──────────────────────────────────────────────────
@@ -1501,6 +1550,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u9",
     available: true,
+    requestCount: 0,
   },
   {
     id: "50",
@@ -1522,6 +1572,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u3",
     available: true,
+    requestCount: 0,
   },
   {
     id: "51",
@@ -1543,6 +1594,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u9",
     available: true,
+    requestCount: 3,
   },
   {
     id: "52",
@@ -1564,6 +1616,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u15",
     available: true,
+    requestCount: 1,
   },
   {
     id: "53",
@@ -1585,6 +1638,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u13",
     available: true,
+    requestCount: 0,
   },
   {
     id: "54",
@@ -1606,6 +1660,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u10",
     available: true,
+    requestCount: 2,
   },
   {
     id: "55",
@@ -1627,6 +1682,7 @@ export const MOCK_GAMES: Game[] = [
     ownershipType: "donated",
     ownerId: "u11",
     available: true,
+    requestCount: 0,
   },
 ];
 
