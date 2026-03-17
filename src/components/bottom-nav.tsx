@@ -2,23 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gamepad2, Gift, Truck, Sun, Moon } from "lucide-react";
-import { useTheme } from "./theme-provider";
+import { motion } from "framer-motion";
+import { Search, PlusCircle, User, MapPin, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Games", labelHe: "משחקים", icon: Gamepad2 },
-  { href: "/donate", label: "Donate", labelHe: "תרומה", icon: Gift },
-  { href: "/relay", label: "Relay", labelHe: "שליחות", icon: Truck },
+  { href: "/", label: "Browse", icon: Search },
+  { href: "/map", label: "Map", icon: MapPin },
+  { href: "/add", label: "Share", icon: PlusCircle },
+  { href: "/requests", label: "Wishes", icon: Heart },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { theme, toggle } = useTheme();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/80 backdrop-blur-lg safe-area-bottom">
-      <div className="mx-auto flex max-w-md items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 glass">
+      <div className="mx-auto flex max-w-md items-center justify-around py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {links.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
@@ -26,22 +27,24 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors",
-                active ? "text-primary" : "text-muted-foreground"
+                "relative flex flex-col items-center gap-0.5 px-3 py-1.5 text-[11px] font-medium transition-colors",
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
+              {active && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                />
+              )}
+              <Icon className={cn("h-5 w-5 transition-all", active && "stroke-[2.5]")} />
               <span>{label}</span>
             </Link>
           );
         })}
-        <button
-          onClick={toggle}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-muted-foreground transition-colors"
-        >
-          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          <span>{theme === "dark" ? "Light" : "Dark"}</span>
-        </button>
       </div>
     </nav>
   );

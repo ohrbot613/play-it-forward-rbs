@@ -15,6 +15,15 @@ export type SortOption = "closest" | "category" | "newest" | "most-shared" | "to
 
 export type Complexity = "light" | "medium" | "heavy";
 
+export type OwnershipType = "donated" | "lent";
+
+export interface CityLeaderboard {
+  city: string;
+  totalGames: number;
+  totalHandoffs: number;
+  topSharers: { userId: string; name: string; gamesShared: number }[];
+}
+
 export interface Review {
   id: string;
   userId: string;
@@ -36,6 +45,12 @@ export interface UserProfile {
   memberSince: string;
   trustScore: number;
   bio: string;
+  kidAges?: number[];
+  preferredCategories?: GameCategory[];
+  referralCode: string;
+  referredBy?: string;
+  isFoundingMember: boolean;
+  city: string;
 }
 
 export interface Game {
@@ -61,6 +76,10 @@ export interface Game {
   handoffs: number;
   rating: number;
   reviewCount: number;
+  ownershipType: OwnershipType;
+  ownerId: string;
+  lentSince?: string; // ISO date, only for lent games
+  available: boolean;
 }
 
 export interface GameRequest {
@@ -70,6 +89,25 @@ export interface GameRequest {
   requesterPhone: string;
   status: "pending" | "accepted" | "completed" | "cancelled";
   createdAt: string;
+}
+
+export type WishUrgency = "low" | "normal" | "high";
+
+export interface CommunityWish {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  requesterAvatar: string;
+  neighborhood: string;
+  title: string;
+  description: string;
+  category: GameCategory;
+  ageRange: string;
+  urgency: WishUrgency;
+  status: "open" | "matched" | "fulfilled" | "cancelled";
+  matchedGameId?: string;
+  createdAt: string;
+  responses: number;
 }
 
 export const CATEGORIES: { value: GameCategory; label: string; emoji: string }[] = [
@@ -110,6 +148,12 @@ export const COMPLEXITY_LABELS: Record<Complexity, string> = {
   medium: "Medium",
   heavy: "Complex",
 };
+
+export const NEIGHBORHOODS = ["RBS Aleph", "RBS Bet", "RBS Gimmel", "Old Beit Shemesh"] as const;
+
+export const CITIES: { value: string; label: string }[] = [
+  { value: "rbs", label: "Ramat Beit Shemesh" },
+];
 
 // Default user location: center of RBS Aleph
 const DEFAULT_LAT = 31.738;
@@ -158,6 +202,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-09-15",
     trustScore: 4.9,
     bio: "Mom of 5, game night enthusiast. Love sharing what we've outgrown!",
+    kidAges: [3, 5, 8, 11, 14],
+    preferredCategories: ["board-games", "puzzles"],
+    referralCode: "MIR01",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u2",
@@ -170,6 +219,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-10-01",
     trustScore: 4.7,
     bio: "Father of 3 boys. Board game collector trying to downsize.",
+    kidAges: [4, 7, 10],
+    preferredCategories: ["board-games", "lego-building"],
+    referralCode: "YOS02",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u3",
@@ -182,6 +236,9 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-08-20",
     trustScore: 5.0,
     bio: "Retired teacher. Games should be played, not collecting dust!",
+    referralCode: "SAR03",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u4",
@@ -194,6 +251,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-11-10",
     trustScore: 4.8,
     bio: "LEGO dad. Kids grew up but the bricks remain.",
+    kidAges: [12, 15],
+    preferredCategories: ["lego-building"],
+    referralCode: "AVI04",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u5",
@@ -206,6 +268,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-12-01",
     trustScore: 4.6,
     bio: "Our playroom was overflowing. Happy to share!",
+    kidAges: [2, 5, 7],
+    preferredCategories: ["outdoor-toys", "magnets"],
+    referralCode: "DEV05",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u6",
@@ -218,6 +285,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-10-15",
     trustScore: 4.9,
     bio: "Playdate coordinator. Big believer in sharing economy.",
+    kidAges: [3, 6, 8, 11],
+    preferredCategories: ["board-games", "outdoor-toys"],
+    referralCode: "CHA06",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u7",
@@ -230,6 +302,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2026-01-05",
     trustScore: 4.5,
     bio: "New to the neighborhood. Sharing is a great way to meet people!",
+    kidAges: [1, 4],
+    preferredCategories: ["magnets", "puzzles"],
+    referralCode: "RIV07",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u8",
@@ -242,6 +319,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-09-01",
     trustScore: 4.8,
     bio: "Magnet and building toy specialist. My kids test everything!",
+    kidAges: [5, 8, 10],
+    preferredCategories: ["magnets", "lego-building"],
+    referralCode: "MOS08",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u9",
@@ -254,6 +336,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-11-20",
     trustScore: 4.7,
     bio: "Puzzle lover. 1000-piece puzzles are my happy place.",
+    kidAges: [6, 9, 13],
+    preferredCategories: ["puzzles", "board-games"],
+    referralCode: "TEH09",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u10",
@@ -266,6 +353,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-08-01",
     trustScore: 5.0,
     bio: "Strategy game geek. Happy to teach any game I share.",
+    kidAges: [7, 10, 14],
+    preferredCategories: ["board-games"],
+    referralCode: "DOV10",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u11",
@@ -278,6 +370,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-12-15",
     trustScore: 4.6,
     bio: "Outdoor play advocate. Fresh air and games go together!",
+    kidAges: [4, 6, 9],
+    preferredCategories: ["outdoor-toys"],
+    referralCode: "BAT11",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u12",
@@ -290,6 +387,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2026-01-20",
     trustScore: 4.4,
     bio: "New dad discovering the world of kids' games.",
+    kidAges: [1, 3],
+    preferredCategories: ["lego-building", "magnets"],
+    referralCode: "ELI12",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u13",
@@ -302,6 +404,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-10-05",
     trustScore: 4.8,
     bio: "Homeschool mom. Games are our favorite teaching tool.",
+    kidAges: [5, 7, 9, 12],
+    preferredCategories: ["board-games", "puzzles"],
+    referralCode: "NAO13",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u14",
@@ -314,6 +421,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2026-02-01",
     trustScore: 4.3,
     bio: "Just moved in. Looking forward to game nights with neighbors.",
+    kidAges: [3, 6],
+    preferredCategories: ["board-games", "outdoor-toys"],
+    referralCode: "SHL14",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
   {
     id: "u15",
@@ -326,6 +438,11 @@ export const MOCK_USERS: UserProfile[] = [
     memberSince: "2025-09-20",
     trustScore: 4.9,
     bio: "Community organizer. Sharing builds community!",
+    kidAges: [4, 7, 10, 13],
+    preferredCategories: ["outdoor-toys", "board-games"],
+    referralCode: "RAC15",
+    isFoundingMember: true,
+    city: "Ramat Beit Shemesh",
   },
 ];
 
@@ -360,6 +477,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 7,
     rating: 4.8,
     reviewCount: 5,
+    ownershipType: "donated",
+    ownerId: "u1",
+    available: true,
   },
   {
     id: "2",
@@ -378,6 +498,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.6,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u2",
+    available: true,
   },
   {
     id: "3",
@@ -396,6 +519,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 12,
     rating: 4.5,
     reviewCount: 5,
+    ownershipType: "donated",
+    ownerId: "u5",
+    available: true,
   },
   {
     id: "4",
@@ -414,6 +540,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.9,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u10",
+    available: true,
   },
   {
     id: "5",
@@ -432,6 +561,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.7,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u3",
+    available: true,
   },
   {
     id: "6",
@@ -450,6 +582,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.8,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u10",
+    available: true,
   },
   {
     id: "7",
@@ -468,6 +603,10 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.6,
     reviewCount: 4,
+    ownershipType: "lent",
+    ownerId: "u1",
+    lentSince: "2026-01-15",
+    available: true,
   },
   {
     id: "8",
@@ -486,6 +625,10 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.7,
     reviewCount: 3,
+    ownershipType: "lent",
+    ownerId: "u8",
+    lentSince: "2025-12-20",
+    available: true,
   },
   {
     id: "9",
@@ -504,6 +647,10 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 8,
     rating: 4.5,
     reviewCount: 5,
+    ownershipType: "lent",
+    ownerId: "u3",
+    lentSince: "2026-02-10",
+    available: true,
   },
   {
     id: "10",
@@ -522,6 +669,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.8,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u9",
+    available: false,
   },
   {
     id: "11",
@@ -540,6 +690,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.4,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u15",
+    available: true,
   },
   {
     id: "12",
@@ -558,6 +711,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 10,
     rating: 3.9,
     reviewCount: 5,
+    ownershipType: "donated",
+    ownerId: "u14",
+    available: true,
   },
   {
     id: "13",
@@ -576,6 +732,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.3,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u3",
+    available: true,
   },
   {
     id: "14",
@@ -594,6 +753,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.2,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u7",
+    available: true,
   },
   {
     id: "15",
@@ -612,6 +774,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.9,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u10",
+    available: true,
   },
   {
     id: "16",
@@ -630,6 +795,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.5,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u6",
+    available: true,
   },
   {
     id: "17",
@@ -648,6 +816,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 7,
     rating: 4.1,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u12",
+    available: true,
   },
   {
     id: "18",
@@ -666,6 +837,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.6,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u1",
+    available: true,
   },
 
   // ── OUTDOOR TOYS (8) ─────────────────────────────────────────────
@@ -686,6 +860,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.3,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u7",
+    available: true,
   },
   {
     id: "20",
@@ -704,6 +881,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.7,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u11",
+    available: true,
   },
   {
     id: "21",
@@ -722,6 +902,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.4,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u11",
+    available: true,
   },
   {
     id: "22",
@@ -740,6 +923,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.5,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u4",
+    available: true,
   },
   {
     id: "23",
@@ -758,6 +944,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.6,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u12",
+    available: true,
   },
   {
     id: "24",
@@ -776,6 +965,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 1,
     rating: 4.2,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u14",
+    available: true,
   },
   {
     id: "25",
@@ -794,6 +986,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 1,
     rating: 4.9,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u15",
+    available: true,
   },
   {
     id: "26",
@@ -812,6 +1007,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 8,
     rating: 4.0,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u5",
+    available: true,
   },
 
   // ── LEGO / BUILDING (9) ──────────────────────────────────────────
@@ -832,6 +1030,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.7,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u4",
+    available: true,
   },
   {
     id: "28",
@@ -850,6 +1051,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.5,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u4",
+    available: true,
   },
   {
     id: "29",
@@ -868,6 +1072,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 1,
     rating: 4.8,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u8",
+    available: true,
   },
   {
     id: "30",
@@ -886,6 +1093,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.4,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u13",
+    available: true,
   },
   {
     id: "31",
@@ -904,6 +1114,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 11,
     rating: 4.6,
     reviewCount: 5,
+    ownershipType: "donated",
+    ownerId: "u1",
+    available: true,
   },
   {
     id: "32",
@@ -922,6 +1135,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 7,
     rating: 4.7,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u6",
+    available: true,
   },
   {
     id: "33",
@@ -940,6 +1156,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.8,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u2",
+    available: true,
   },
   {
     id: "34",
@@ -958,6 +1177,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.3,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u8",
+    available: true,
   },
   {
     id: "35",
@@ -976,6 +1198,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.5,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u13",
+    available: true,
   },
 
   // ── MAGNETS (7) ──────────────────────────────────────────────────
@@ -996,6 +1221,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 9,
     rating: 4.9,
     reviewCount: 5,
+    ownershipType: "donated",
+    ownerId: "u3",
+    available: true,
   },
   {
     id: "37",
@@ -1014,6 +1242,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.7,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u8",
+    available: true,
   },
   {
     id: "38",
@@ -1032,6 +1263,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.3,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u12",
+    available: true,
   },
   {
     id: "39",
@@ -1050,6 +1284,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.5,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u8",
+    available: true,
   },
   {
     id: "40",
@@ -1068,6 +1305,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.8,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u1",
+    available: true,
   },
   {
     id: "41",
@@ -1086,6 +1326,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.6,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u9",
+    available: true,
   },
   {
     id: "42",
@@ -1104,6 +1347,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.7,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u6",
+    available: true,
   },
 
   // ── PLAYMOBIL (6) ────────────────────────────────────────────────
@@ -1124,6 +1370,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.6,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u6",
+    available: true,
   },
   {
     id: "44",
@@ -1142,6 +1391,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.7,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u13",
+    available: true,
   },
   {
     id: "45",
@@ -1160,6 +1412,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.4,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u15",
+    available: true,
   },
   {
     id: "46",
@@ -1178,6 +1433,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.5,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u7",
+    available: true,
   },
   {
     id: "47",
@@ -1196,6 +1454,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 9,
     rating: 4.3,
     reviewCount: 4,
+    ownershipType: "donated",
+    ownerId: "u5",
+    available: true,
   },
   {
     id: "48",
@@ -1214,6 +1475,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.6,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u4",
+    available: true,
   },
 
   // ── PUZZLES (7) ──────────────────────────────────────────────────
@@ -1234,6 +1498,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.8,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u9",
+    available: true,
   },
   {
     id: "50",
@@ -1252,6 +1519,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 6,
     rating: 4.5,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u3",
+    available: true,
   },
   {
     id: "51",
@@ -1270,6 +1540,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 2,
     rating: 4.4,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u9",
+    available: true,
   },
   {
     id: "52",
@@ -1288,6 +1561,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 5,
     rating: 4.3,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u15",
+    available: true,
   },
   {
     id: "53",
@@ -1306,6 +1582,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 3,
     rating: 4.6,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u13",
+    available: true,
   },
   {
     id: "54",
@@ -1324,6 +1603,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 1,
     rating: 4.7,
     reviewCount: 2,
+    ownershipType: "donated",
+    ownerId: "u10",
+    available: true,
   },
   {
     id: "55",
@@ -1342,6 +1624,9 @@ export const MOCK_GAMES: Game[] = [
     handoffs: 4,
     rating: 4.5,
     reviewCount: 3,
+    ownershipType: "donated",
+    ownerId: "u11",
+    available: true,
   },
 ];
 
@@ -1481,3 +1766,213 @@ export function getStarDisplay(rating: number): string {
   const empty = 5 - full - half;
   return "\u2605".repeat(full) + (half ? "\u00BD" : "") + "\u2606".repeat(empty);
 }
+
+export function generateReferralCode(name: string): string {
+  return name.replace(/[^a-zA-Z]/g, "").slice(0, 5).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+}
+
+export function getCityLeaderboard(city: string): CityLeaderboard {
+  const cityUsers = MOCK_USERS.filter(u => u.city === city);
+  const sorted = [...cityUsers].sort((a, b) => b.gamesShared - a.gamesShared);
+  return {
+    city,
+    totalGames: cityUsers.reduce((sum, u) => sum + u.gamesShared, 0),
+    totalHandoffs: cityUsers.reduce((sum, u) => sum + u.totalHandoffs, 0),
+    topSharers: sorted.slice(0, 10).map(u => ({ userId: u.id, name: u.name, gamesShared: u.gamesShared })),
+  };
+}
+
+export function getRecommendedGames(userPrefs: { kidAges?: number[]; preferredCategories?: GameCategory[] }, limit = 10): Game[] {
+  let scored = MOCK_GAMES.filter(g => g.available).map(game => {
+    let score = 0;
+    // Category match
+    if (userPrefs.preferredCategories?.includes(game.category)) score += 3;
+    // Age match
+    if (userPrefs.kidAges?.length) {
+      const ageGroupMap: Record<string, [number, number]> = {
+        toddler: [2, 4], kids: [5, 8], tweens: [9, 12], teens: [13, 17], family: [2, 99], adults: [18, 99],
+      };
+      const hasAgeMatch = game.ageGroups.some(ag => {
+        const [min, max] = ageGroupMap[ag] || [0, 99];
+        return userPrefs.kidAges!.some(age => age >= min && age <= max);
+      });
+      if (hasAgeMatch) score += 2;
+    }
+    // Boost popular games
+    score += game.rating * 0.5;
+    score += Math.min(game.handoffs, 10) * 0.1;
+    return { game, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(s => s.game);
+}
+
+export function getUserGames(userId: string): Game[] {
+  return MOCK_GAMES.filter(g => g.ownerId === userId || g.currentHolder.userId === userId);
+}
+
+export function canBorrow(userId: string): { allowed: boolean; reason?: string } {
+  const donated = MOCK_GAMES.filter(g => g.ownershipType === "donated" && g.ownerId === userId).length;
+  const lent = MOCK_GAMES.filter(g => g.ownershipType === "lent" && g.ownerId === userId).length;
+  if (donated >= 1 || lent >= 2) return { allowed: true };
+  return { allowed: false, reason: "Donate 1 game or lend 2 games to start borrowing" };
+}
+
+export function getAvailableGames(): Game[] {
+  return MOCK_GAMES.filter(g => g.available);
+}
+
+export function formatWhatsAppRequest(phone: string, gameTitle: string, requesterName: string, ownershipType: OwnershipType): string {
+  const typeText = ownershipType === "lent" ? "borrow" : "pick up";
+  const text = encodeURIComponent(
+    `Hi! I'm ${requesterName} from Play it Forward. I'd love to ${typeText} "${gameTitle}". Is it available? When works for pickup?`
+  );
+  return `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${text}`;
+}
+
+// ============================================
+// COMMUNITY WISHES (Game Requests)
+// ============================================
+
+export const MOCK_WISHES: CommunityWish[] = [
+  {
+    id: "w1",
+    requesterId: "u3",
+    requesterName: "Yael Friedman",
+    requesterAvatar: "https://i.pravatar.cc/150?u=yael",
+    neighborhood: "RBS Gimmel",
+    title: "Settlers of Catan",
+    description: "Looking for Catan for a Shabbat game night this week! We're 4 adults who love strategy games. Any expansion packs welcome too.",
+    category: "board-games",
+    ageRange: "12+",
+    urgency: "high",
+    status: "open",
+    createdAt: "2026-03-17T08:30:00Z",
+    responses: 2,
+  },
+  {
+    id: "w2",
+    requesterId: "u5",
+    requesterName: "Dov Goldstein",
+    requesterAvatar: "https://i.pravatar.cc/150?u=dov",
+    neighborhood: "RBS Aleph",
+    title: "LEGO Technic sets for ages 8-12",
+    description: "My boys are obsessed with building. Looking for any Technic or Creator sets — don't mind if pieces are missing, they'll figure it out!",
+    category: "lego-building",
+    ageRange: "8-12",
+    urgency: "normal",
+    status: "open",
+    createdAt: "2026-03-16T14:20:00Z",
+    responses: 3,
+  },
+  {
+    id: "w3",
+    requesterId: "u1",
+    requesterName: "Miriam Katz",
+    requesterAvatar: "https://i.pravatar.cc/150?u=miriam",
+    neighborhood: "RBS Aleph",
+    title: "Outdoor games for a birthday party",
+    description: "Turning 8! Need fun outdoor games for about 15 kids. Frisbees, balls, relay race stuff — anything goes. Party is next Thursday.",
+    category: "outdoor-toys",
+    ageRange: "6-10",
+    urgency: "high",
+    status: "open",
+    createdAt: "2026-03-16T10:00:00Z",
+    responses: 5,
+  },
+  {
+    id: "w4",
+    requesterId: "u7",
+    requesterName: "Shira Levy",
+    requesterAvatar: "https://i.pravatar.cc/150?u=shira",
+    neighborhood: "RBS Bet",
+    title: "Toddler-friendly puzzles",
+    description: "Just moved to the neighborhood. My 2-year-old loves puzzles but we left most of ours behind. Wooden peg puzzles or chunky piece puzzles would be perfect.",
+    category: "puzzles",
+    ageRange: "2-4",
+    urgency: "normal",
+    status: "open",
+    createdAt: "2026-03-15T16:45:00Z",
+    responses: 1,
+  },
+  {
+    id: "w5",
+    requesterId: "u2",
+    requesterName: "David Cohen",
+    requesterAvatar: "https://i.pravatar.cc/150?u=david",
+    neighborhood: "RBS Aleph",
+    title: "Ticket to Ride",
+    description: "Heard great things about this game. Would love to try before buying. Happy to share our Codenames in exchange!",
+    category: "board-games",
+    ageRange: "8+",
+    urgency: "low",
+    status: "matched",
+    matchedGameId: "g12",
+    createdAt: "2026-03-14T09:15:00Z",
+    responses: 2,
+  },
+  {
+    id: "w6",
+    requesterId: "u8",
+    requesterName: "Noa Berkowitz",
+    requesterAvatar: "https://i.pravatar.cc/150?u=noa",
+    neighborhood: "Dolev",
+    title: "Magna-Tiles or Magformers",
+    description: "Looking for magnetic building tiles for my 4 and 6 year olds. We had a set but half the pieces disappeared. Any size pack appreciated!",
+    category: "magnets",
+    ageRange: "3-7",
+    urgency: "normal",
+    status: "open",
+    createdAt: "2026-03-15T11:30:00Z",
+    responses: 0,
+  },
+  {
+    id: "w7",
+    requesterId: "u4",
+    requesterName: "Avi Stern",
+    requesterAvatar: "https://i.pravatar.cc/150?u=avi",
+    neighborhood: "RBS Gimmel",
+    title: "Playmobil pirate ship or castle",
+    description: "My kids are deep into imaginative play. A Playmobil set would make their month. We'll take great care of it!",
+    category: "playmobil",
+    ageRange: "4-10",
+    urgency: "low",
+    status: "open",
+    createdAt: "2026-03-13T18:00:00Z",
+    responses: 1,
+  },
+  {
+    id: "w8",
+    requesterId: "u10",
+    requesterName: "Tova Rosen",
+    requesterAvatar: "https://i.pravatar.cc/150?u=tova",
+    neighborhood: "RBS Bet",
+    title: "Pandemic or cooperative board game",
+    description: "We love co-op games! Looking for Pandemic, Forbidden Island, or anything where we play together instead of against each other.",
+    category: "board-games",
+    ageRange: "10+",
+    urgency: "normal",
+    status: "fulfilled",
+    matchedGameId: "g22",
+    createdAt: "2026-03-12T13:00:00Z",
+    responses: 4,
+  },
+];
+
+export function getOpenWishes(): CommunityWish[] {
+  return MOCK_WISHES.filter(w => w.status === "open");
+}
+
+export function getWishesByCategory(category: GameCategory): CommunityWish[] {
+  return MOCK_WISHES.filter(w => w.category === category && w.status === "open");
+}
+
+export function getWishById(id: string): CommunityWish | undefined {
+  return MOCK_WISHES.find(w => w.id === id);
+}
+
+export const URGENCY_CONFIG: Record<WishUrgency, { label: string; color: string; bg: string }> = {
+  low: { label: "No rush", color: "text-sky-700", bg: "bg-sky-50" },
+  normal: { label: "When available", color: "text-slate-700", bg: "bg-slate-50" },
+  high: { label: "Urgent", color: "text-coral", bg: "bg-red-50" },
+};
