@@ -2032,3 +2032,16 @@ export const URGENCY_CONFIG: Record<WishUrgency, { label: string; color: string;
   normal: { label: "When available", color: "text-slate-700", bg: "bg-slate-50" },
   high: { label: "Urgent", color: "text-coral", bg: "bg-red-50" },
 };
+
+// ─── MOCK VOLUNTEERS (for relay route matching) ─────────────────────────────
+
+export const MOCK_VOLUNTEERS = [
+  { id: "v1", name: "Rivka M.", lat: 31.737, lng: 34.986, rangeKm: 2.5 },
+  { id: "v2", name: "Dov K.", lat: 31.740, lng: 34.990, rangeKm: 2.0 },
+  { id: "v3", name: "Shira L.", lat: 31.734, lng: 34.984, rangeKm: 3.0 },
+  { id: "v4", name: "Benny R.", lat: 31.742, lng: 34.988, rangeKm: 1.5 },
+  { id: "v5", name: "Michal T.", lat: 31.736, lng: 34.992, rangeKm: 2.0 },
+];
+
+/** RBS center — used as default requester position when GPS unavailable */
+export const RBS_CENTER = { lat: 31.738, lng: 34.9875 };

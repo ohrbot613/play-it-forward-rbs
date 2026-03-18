@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, formatWhatsAppLink, formatWhatsAppRequest, formatDistance, canBorrow, COMPLEXITY_LABELS } from "@/lib/data";
+import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, formatWhatsAppLink, formatWhatsAppRequest, formatDistance, canBorrow, COMPLEXITY_LABELS, MOCK_VOLUNTEERS, RBS_CENTER } from "@/lib/data";
+import { bestRelayRoute } from "@/lib/relay";
 import { Button } from "@/components/ui/button";
 import { RequestGameModal } from "@/components/request-game-modal";
-import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
+import { RelayRouteDisplay } from "@/components/relay-route-display";
+import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand, BookOpen } from "lucide-react";
+import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 
 const fadeUp = {
@@ -67,6 +70,12 @@ export default function GameDetailPage() {
   };
 
   const totalInterested = game.requestCount + localRequestCount;
+
+  const relayRoute = bestRelayRoute(
+    { lat: game.currentHolder.lat, lng: game.currentHolder.lng },
+    RBS_CENTER,
+    MOCK_VOLUNTEERS
+  );
 
   return (
     <div>
@@ -301,6 +310,13 @@ export default function GameDetailPage() {
               </motion.div>
             );
           })()}
+
+          {/* Relay Route */}
+          {relayRoute && (
+            <motion.div {...fadeUp} transition={{ duration: 0.4, delay: 0.32 }}>
+              <RelayRouteDisplay route={relayRoute} />
+            </motion.div>
+          )}
 
           {/* Interest Indicator */}
           {(totalInterested > 0) && (

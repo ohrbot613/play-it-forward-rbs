@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, MapPin, Star, Hand } from "lucide-react";
+import { Users, MapPin, Star, Hand, BookOpen } from "lucide-react";
 import type { Game } from "@/lib/data";
 import { getCategoryEmoji, getCategoryLabel, formatDistance } from "@/lib/data";
 import { useLanguage } from "@/lib/i18n";
@@ -106,6 +106,17 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
                   </span>
                 )}
               </div>
+
+              {game.handoffs > 0 && (
+                <Link
+                  href={`/game/${game.id}/journey`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-2 flex items-center gap-1 text-2xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  <BookOpen className="h-3 w-3" />
+                  See journey →
+                </Link>
+              )}
             </CardContent>
           </motion.div>
         </Card>
