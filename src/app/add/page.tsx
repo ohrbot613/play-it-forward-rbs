@@ -20,7 +20,7 @@ import { useLanguage } from "@/lib/i18n";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
-type Step = "form" | "photos" | "submitting" | "done";
+type Step = "form" | "photos" | "identifying" | "submitting" | "done";
 
 const pageVariants = {
   enter: { opacity: 0, x: 20 },
@@ -40,6 +40,8 @@ export default function AddGamePage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [aiFilled, setAiFilled] = useState(false);
+  const [aiToast, setAiToast] = useState<string | null>(null);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -64,13 +66,54 @@ export default function AddGamePage() {
     );
   };
 
+  const identifyGame = async (photoDataUrl: string) => {
+    setStep("identifying");
+    try {
+      const res = await fetch("/api/identify-game", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoUrl: photoDataUrl }),
+      });
+      if (!res.ok) throw new Error("API error");
+      const data = await res.json();
+      if (data.confidence === "high" || data.confidence === "medium") {
+        if (data.name) setTitle(data.name);
+        if (data.description) setDescription(data.description);
+        if (data.category) setCategory(data.category as GameCategory);
+        if (data.minPlayers) setMinPlayers(String(data.minPlayers));
+        if (data.maxPlayers) setMaxPlayers(String(data.maxPlayers));
+        setAiFilled(true);
+        setStep("form");
+      } else {
+        setAiToast(t("add.ai_failed"));
+        setStep("photos");
+      }
+    } catch {
+      setAiToast(t("add.ai_failed"));
+      setStep("photos");
+    }
+  };
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!aiToast) return;
+    const timer = setTimeout(() => setAiToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [aiToast]);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach((file) => {
+    const isFirstPhoto = photos.length === 0;
+    Array.from(files).forEach((file, i) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotos((prev) => [...prev, reader.result as string]);
+        const dataUrl = reader.result as string;
+        setPhotos((prev) => [...prev, dataUrl]);
+        // Trigger AI identification on the very first photo added
+        if (isFirstPhoto && i === 0) {
+          identifyGame(dataUrl);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -165,6 +208,17 @@ export default function AddGamePage() {
     );
   }
 
+  if (step === "identifying") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-sm text-muted-foreground">
+          {t("add.identifying")}
+        </p>
+      </div>
+    );
+  }
+
   if (step === "submitting") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
@@ -209,6 +263,7 @@ export default function AddGamePage() {
             setCondition("");
             setAgeGroups([]);
             setPhotos([]);
+            setAiFilled(false);
           }}
           variant="outline"
           className="rounded-2xl h-11 px-5"
@@ -267,6 +322,20 @@ export default function AddGamePage() {
           </label>
         </div>
 
+        {/* AI toast */}
+        <AnimatePresence>
+          {aiToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="mb-4 px-4 py-2.5 rounded-2xl bg-muted text-xs text-muted-foreground text-center"
+            >
+              {aiToast}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1 h-12 rounded-2xl" onClick={() => setStep("form")}>
             <ArrowLeft className={cn("h-4 w-4", lang === "he" ? "ml-1.5" : "mr-1.5")} />
@@ -289,6 +358,20 @@ export default function AddGamePage() {
       exit="exit"
       className="px-4 pt-8"
     >
+      {/* AI auto-fill banner */}
+      {aiFilled && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-2.5 rounded-2xl bg-primary/10 dark:bg-primary/20 text-xs text-primary font-medium flex items-center justify-between"
+        >
+          <span>{t("add.ai_filled")}</span>
+          <button onClick={() => setAiFilled(false)} className="ml-2">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">{t("add.title")}</h1>

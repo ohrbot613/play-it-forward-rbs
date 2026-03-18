@@ -134,6 +134,9 @@ const translations = {
   "add.game_available": { en: "is now available for your neighbors to borrow.", he: "זמין כעת להשאלה לשכנים שלך." },
   "add.whatsapp_notify": { en: "You'll get a WhatsApp message when someone wants it.", he: "תקבל הודעת וואטסאפ כשמישהו ירצה אותו." },
   "add.share_another": { en: "Share Another Game", he: "שתף משחק נוסף" },
+  "add.identifying": { en: "Identifying game...", he: "מזהה משחק..." },
+  "add.ai_filled": { en: "AI filled this in — tap to edit", he: "AI מילא את זה — לחץ לעריכה" },
+  "add.ai_failed": { en: "Couldn't identify game — please fill in manually", he: "לא הצלחנו לזהות את המשחק — נא למלא ידנית" },
 
   // Empty states
   "empty.no_games": { en: "No games found", he: "לא נמצאו משחקים" },
