@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   MOCK_GAMES,
+  MOCK_USERS,
   CATEGORIES,
   getCategoryLabel,
   getCategoryEmoji,
@@ -27,13 +28,18 @@ import {
   X,
   LogOut,
   Loader2,
+  LogIn,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
+
+// Demo/mock user shown when Supabase auth is not configured
+const DEMO_USER_ID = "u1";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -43,22 +49,27 @@ const fadeUp = {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // true = Supabase not configured, show demo mode
+  const [demoMode, setDemoMode] = useState(false);
   const [preferredCategories, setPreferredCategories] = useState<GameCategory[]>([]);
   const [kidAges, setKidAges] = useState<number[]>([]);
   const [newAge, setNewAge] = useState("");
   const [showPrefs, setShowPrefs] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const supabase = createClient();
     if (!supabase?.auth) {
+      // Supabase not configured — show demo profile
+      setDemoMode(true);
       setLoading(false);
       return;
     }
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
-        // Redirect to sign-in page
+        // Supabase configured but user not signed in — redirect
         router.replace("/auth/signin?redirect=/profile");
         return;
       }
@@ -103,17 +114,20 @@ export default function ProfilePage() {
     setKidAges((prev) => prev.filter((a) => a !== age));
   };
 
-  const recommendations = useMemo(() => {
-    if (!user) return [];
-    return getRecommendedGames({ kidAges, preferredCategories }, 4);
-  }, [user, kidAges, preferredCategories]);
+  const demoProfile = MOCK_USERS.find((u) => u.id === DEMO_USER_ID);
 
-  const displayName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
-    "You";
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const recommendations = useMemo(() => {
+    if (!user && !demoMode) return [];
+    return getRecommendedGames({ kidAges, preferredCategories }, 4);
+  }, [user, demoMode, kidAges, preferredCategories]);
+
+  const displayName = demoMode
+    ? (demoProfile?.name ?? t("profile.demo_name"))
+    : (user?.user_metadata?.full_name ||
+       user?.user_metadata?.name ||
+       user?.email?.split("@")[0] ||
+       "You");
+  const avatarUrl = demoMode ? null : user?.user_metadata?.avatar_url;
 
   if (loading) {
     return (
@@ -123,7 +137,8 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
+  // Supabase configured but no user yet (redirect in progress)
+  if (!demoMode && !user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -131,7 +146,12 @@ export default function ProfilePage() {
     );
   }
 
-  const myGames = MOCK_GAMES.slice(0, 3);
+  const myGames = demoMode
+    ? MOCK_GAMES.filter((g) => g.ownerId === DEMO_USER_ID).slice(0, 3)
+    : MOCK_GAMES.slice(0, 3);
+
+  const trustScore = demoMode ? (demoProfile?.trustScore ?? 95) : 95;
+  const totalHandoffs = myGames.reduce((sum, g) => sum + g.handoffs, 0);
 
   return (
     <motion.div
@@ -156,17 +176,22 @@ export default function ProfilePage() {
             </div>
           )}
           <div className="flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">
                 Hi, {displayName}!
               </h1>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-2xs font-semibold">
                 <Award className="h-3 w-3" />
-                Founding Member
+                {t("profile.founding_member")}
               </span>
+              {demoMode && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sunshine/20 text-yellow-700 text-2xs font-semibold">
+                  Demo
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {myGames.length} games in circulation
+              {myGames.length} {t("profile.games_in_circulation")}
             </p>
           </div>
         </div>
@@ -181,19 +206,17 @@ export default function ProfilePage() {
         <div className="rounded-2xl bg-white elevation-1 p-4 text-center">
           <Package className="h-5 w-5 text-primary mx-auto mb-2" />
           <div className="text-2xl font-bold">{myGames.length}</div>
-          <div className="text-2xs text-muted-foreground mt-0.5">Shared</div>
+          <div className="text-2xs text-muted-foreground mt-0.5">{t("profile.shared")}</div>
         </div>
         <div className="rounded-2xl bg-white elevation-1 p-4 text-center">
           <Repeat className="h-5 w-5 text-coral mx-auto mb-2" />
-          <div className="text-2xl font-bold">
-            {myGames.reduce((sum, g) => sum + g.handoffs, 0)}
-          </div>
-          <div className="text-2xs text-muted-foreground mt-0.5">Handoffs</div>
+          <div className="text-2xl font-bold">{totalHandoffs}</div>
+          <div className="text-2xs text-muted-foreground mt-0.5">{t("profile.handoffs")}</div>
         </div>
         <div className="rounded-2xl bg-white elevation-1 p-4 text-center">
           <Shield className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold">95</div>
-          <div className="text-2xs text-muted-foreground mt-0.5">Trust</div>
+          <div className="text-2xl font-bold">{trustScore}</div>
+          <div className="text-2xs text-muted-foreground mt-0.5">{t("profile.trust")}</div>
         </div>
       </motion.div>
 
@@ -205,7 +228,7 @@ export default function ProfilePage() {
         >
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            My Preferences
+            {t("profile.preferences")}
           </h2>
           <ChevronRight
             className={cn(
@@ -224,7 +247,7 @@ export default function ProfilePage() {
             {/* Kid Ages */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                Kid Ages
+                {t("profile.kid_ages")}
               </label>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {kidAges.map((age) => (
@@ -266,7 +289,7 @@ export default function ProfilePage() {
             {/* Preferred Categories */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                Preferred Categories
+                {t("profile.preferred_categories")}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {CATEGORIES.map((c) => {
@@ -298,7 +321,7 @@ export default function ProfilePage() {
           <motion.div {...fadeUp} transition={{ delay: 0.22 }} className="mb-6">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Star className="h-4 w-4 text-sunshine" />
-              Recommended for You
+              {t("profile.recommended")}
             </h2>
             <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
               {recommendations.map((game) => (
@@ -343,7 +366,7 @@ export default function ProfilePage() {
       {/* My Games List */}
       <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
         <h2 className="text-sm font-semibold mb-3">
-          Games I&apos;m Sharing
+          {t("profile.games_sharing")}
         </h2>
         <div className="space-y-2.5">
           {myGames.map((game, i) => (
@@ -395,16 +418,28 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
-      {/* Sign Out */}
+      {/* Sign Out / Sign In */}
       <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="mt-8">
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className="w-full h-11 rounded-2xl text-muted-foreground hover:text-red-500"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+        {demoMode ? (
+          <Link href="/auth/signin?redirect=/profile">
+            <Button
+              variant="ghost"
+              className="w-full h-11 rounded-2xl text-muted-foreground hover:text-primary"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              {t("profile.sign_in_btn")}
+            </Button>
+          </Link>
+        ) : (
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="w-full h-11 rounded-2xl text-muted-foreground hover:text-red-500"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {t("profile.sign_out")}
+          </Button>
+        )}
       </motion.div>
     </motion.div>
   );

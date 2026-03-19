@@ -45,6 +45,8 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
   const urgency = URGENCY_CONFIG[wish.urgency];
   const isFulfilled = wish.status === "fulfilled";
   const isMatched = wish.status === "matched";
+  const isOpen = wish.status === "open";
+  const [offered, setOffered] = useState(false);
   const { t } = useLanguage();
 
   return (
@@ -148,6 +150,36 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
               <span>{wish.responses}</span>
             </div>
           </div>
+
+          {/* "I have this game!" CTA — only on open wishes */}
+          {isOpen && (
+            <AnimatePresence mode="wait">
+              {offered ? (
+                <motion.div
+                  key="offered"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-medium"
+                >
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  {t("wishes.offer_sent")}
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="offer-btn"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  onClick={() => setOffered(true)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-semibold transition-colors active:scale-[0.98]"
+                >
+                  <HandHeart className="h-4 w-4" />
+                  {t("wishes.i_have_it")}
+                </motion.button>
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </Card>
     </motion.div>

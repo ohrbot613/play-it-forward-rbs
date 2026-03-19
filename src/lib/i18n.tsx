@@ -185,6 +185,32 @@ const translations = {
   "dash.days": { en: "days", he: "ימים" },
   "dash.today": { en: "Today", he: "היום" },
   "dash.yesterday": { en: "Yesterday", he: "אתמול" },
+
+  // Dashboard toasts
+  "dash.toast_accepted": { en: "Request accepted!", he: "הבקשה אושרה!" },
+  "dash.toast_declined": { en: "Request declined", he: "הבקשה נדחתה" },
+  "dash.toast_returned": { en: "Game marked as returned", he: "המשחק סומן כהוחזר" },
+
+  // Wishes — offer to help
+  "wishes.i_have_it": { en: "I have this game!", he: "יש לי את המשחק הזה!" },
+  "wishes.offer_sent": { en: "Great! We'll let them know.", he: "מעולה! נודיע להם." },
+  "wishes.offer_cta": { en: "Offer to Help", he: "הצע עזרה" },
+
+  // Profile fallback (mock)
+  "profile.founding_member": { en: "Founding Member", he: "חבר מייסד" },
+  "profile.shared": { en: "Shared", he: "שותף" },
+  "profile.handoffs": { en: "Handoffs", he: "העברות" },
+  "profile.trust": { en: "Trust", he: "אמינות" },
+  "profile.preferences": { en: "My Preferences", he: "ההעדפות שלי" },
+  "profile.kid_ages": { en: "Kid Ages", he: "גילאי הילדים" },
+  "profile.preferred_categories": { en: "Preferred Categories", he: "קטגוריות מועדפות" },
+  "profile.recommended": { en: "Recommended for You", he: "מומלץ עבורך" },
+  "profile.games_sharing": { en: "Games I'm Sharing", he: "משחקים שאני משתף" },
+  "profile.sign_out": { en: "Sign Out", he: "התנתק" },
+  "profile.sign_in_prompt": { en: "Sign in to see your profile", he: "התחבר לצפייה בפרופיל" },
+  "profile.sign_in_btn": { en: "Sign In", he: "התחבר" },
+  "profile.demo_name": { en: "Miriam Katz", he: "מרים כץ" },
+  "profile.games_in_circulation": { en: "games in circulation", he: "משחקים במחזור" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

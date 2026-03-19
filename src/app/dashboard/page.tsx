@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,31 @@ import {
   Clock,
   User,
   Star,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+
+interface Toast {
+  id: string;
+  message: string;
+  type: "success" | "neutral";
+}
+
+let toastIdCounter = 0;
+function useToast() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
+    const id = String(++toastIdCounter);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 2800);
+  }, []);
+
+  return { toasts, addToast };
+}
 
 // ── Mock dashboard state ──────────────────────────────────────────────
 // Current user is Miriam Katz (u1) — she owns games 1, 10, 19, 28, 37, 46
@@ -111,6 +133,7 @@ export default function DashboardPage() {
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [loans, setLoans] = useState(INITIAL_LOANS);
   const { t, lang } = useLanguage();
+  const { toasts, addToast } = useToast();
 
   const myGames = MOCK_GAMES.filter((g) => g.ownerId === CURRENT_USER_ID);
   const pendingCount = requests.filter((r) => r.status === "pending").length;
@@ -126,18 +149,21 @@ export default function DashboardPage() {
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "accepted" as const } : r))
     );
+    addToast(t("dash.toast_accepted"), "success");
   }
 
   function handleDecline(id: string) {
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "declined" as const } : r))
     );
+    addToast(t("dash.toast_declined"), "neutral");
   }
 
   function handleReturn(id: string) {
     setLoans((prev) =>
       prev.map((l) => (l.id === id ? { ...l, returned: true } : l))
     );
+    addToast(t("dash.toast_returned"), "success");
   }
 
   return (
@@ -193,6 +219,30 @@ export default function DashboardPage() {
           );
         })}
       </motion.div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-24 left-0 right-0 z-50 flex flex-col items-center gap-2 pointer-events-none px-4">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium elevation-4 max-w-xs",
+                toast.type === "success"
+                  ? "bg-emerald-500 text-white"
+                  : "bg-foreground text-background"
+              )}
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              {toast.message}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
