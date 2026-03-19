@@ -14,7 +14,16 @@ import {
   formatDistance,
   getRecommendedGames,
   type GameCategory,
+  type Game,
 } from "@/lib/data";
+import {
+  fetchCurrentMember,
+  fetchMemberGames,
+  fetchBorrowHistory,
+  fetchLendHistory,
+  type LendingRequest,
+} from "@/lib/queries";
+import type { UserProfile } from "@/lib/data";
 import {
   Package,
   Repeat,
@@ -55,6 +64,14 @@ export default function ProfilePage() {
   const [kidAges, setKidAges] = useState<number[]>([]);
   const [newAge, setNewAge] = useState("");
   const [showPrefs, setShowPrefs] = useState(false);
+
+  // Real Supabase data
+  const [dbMember, setDbMember] = useState<UserProfile | null>(null);
+  const [myGamesReal, setMyGamesReal] = useState<Game[]>([]);
+  const [borrowHistory, setBorrowHistory] = useState<LendingRequest[]>([]);
+  const [lendHistory, setLendHistory] = useState<LendingRequest[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+
   const router = useRouter();
   const { t } = useLanguage();
 
@@ -90,6 +107,55 @@ export default function ProfilePage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
+  // Load real Supabase profile data once user is known
+  useEffect(() => {
+    if (demoMode || !user) return;
+
+    let cancelled = false;
+    setDataLoading(true);
+
+    (async () => {
+      try {
+        const [member, games] = await Promise.all([
+          fetchCurrentMember(),
+          // fetchMemberGames needs a member ID from the members table —
+          // we get that from fetchCurrentMember result
+          fetchCurrentMember().then((m) => (m ? fetchMemberGames(m.id) : [])),
+        ]);
+
+        if (cancelled) return;
+
+        if (member) {
+          setDbMember(member);
+          // Pre-populate preferences from saved member data
+          if (member.kidAges) setKidAges(member.kidAges);
+          if (member.preferredCategories) setPreferredCategories(member.preferredCategories);
+
+          // Load borrow/lend history in parallel
+          const [borrow, lend] = await Promise.all([
+            fetchBorrowHistory(member.id),
+            fetchLendHistory(member.id),
+          ]);
+          if (!cancelled) {
+            setBorrowHistory(borrow);
+            setLendHistory(lend);
+          }
+        }
+
+        if (!cancelled) {
+          setMyGamesReal(games as Game[]);
+        }
+      } catch (err) {
+        // Fail gracefully — page falls back to empty states
+        console.error("[profile] data load error:", err);
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user, demoMode]);
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -123,11 +189,14 @@ export default function ProfilePage() {
 
   const displayName = demoMode
     ? (demoProfile?.name ?? t("profile.demo_name"))
-    : (user?.user_metadata?.full_name ||
+    : (dbMember?.name ||
+       user?.user_metadata?.full_name ||
        user?.user_metadata?.name ||
        user?.email?.split("@")[0] ||
        "You");
-  const avatarUrl = demoMode ? null : user?.user_metadata?.avatar_url;
+  const avatarUrl = demoMode
+    ? null
+    : (dbMember?.avatar ?? user?.user_metadata?.avatar_url ?? null);
 
   if (loading) {
     return (
@@ -146,12 +215,20 @@ export default function ProfilePage() {
     );
   }
 
+  // myGames: real data when logged in, mock data in demo mode, empty while loading
   const myGames = demoMode
     ? MOCK_GAMES.filter((g) => g.ownerId === DEMO_USER_ID).slice(0, 3)
-    : MOCK_GAMES.slice(0, 3);
+    : dataLoading
+      ? []
+      : myGamesReal.slice(0, 10);
 
-  const trustScore = demoMode ? (demoProfile?.trustScore ?? 95) : 95;
-  const totalHandoffs = myGames.reduce((sum, g) => sum + g.handoffs, 0);
+  const trustScore = demoMode
+    ? (demoProfile?.trustScore ?? 95)
+    : (dbMember?.trustScore ?? 95);
+
+  const totalHandoffs = demoMode
+    ? myGames.reduce((sum, g) => sum + g.handoffs, 0)
+    : (dbMember?.totalHandoffs ?? myGamesReal.reduce((sum, g) => sum + g.handoffs, 0));
 
   return (
     <motion.div
@@ -368,55 +445,143 @@ export default function ProfilePage() {
         <h2 className="text-sm font-semibold mb-3">
           {t("profile.games_sharing")}
         </h2>
-        <div className="space-y-2.5">
-          {myGames.map((game, i) => (
-            <motion.div
-              key={game.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.06 }}
-            >
-              <Link href={`/game/${game.id}`}>
-                <Card className="border-0 elevation-1 bg-white hover:elevation-2 transition-shadow duration-200">
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl overflow-hidden shrink-0 relative">
-                      {game.photos[0] ? (
-                        <Image
-                          src={game.photos[0]}
-                          alt={game.title}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-gradient-to-br from-primary/10 to-sunshine/10 flex items-center justify-center">
-                          <span className="text-lg">
-                            {getCategoryEmoji(game.category)}
+        {dataLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+          </div>
+        ) : myGames.length === 0 ? (
+          <p className="text-2xs text-muted-foreground text-center py-6">
+            {demoMode ? "No games yet." : "You haven't shared any games yet."}
+          </p>
+        ) : (
+          <div className="space-y-2.5">
+            {myGames.map((game, i) => (
+              <motion.div
+                key={game.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + i * 0.06 }}
+              >
+                <Link href={`/game/${game.id}`}>
+                  <Card className="border-0 elevation-1 bg-white hover:elevation-2 transition-shadow duration-200">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl overflow-hidden shrink-0 relative">
+                        {game.photos[0] ? (
+                          <Image
+                            src={game.photos[0]}
+                            alt={game.title}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-primary/10 to-sunshine/10 flex items-center justify-center">
+                            <span className="text-lg">
+                              {getCategoryEmoji(game.category)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate">
+                          {game.title}
+                        </h3>
+                        <p className="text-2xs text-muted-foreground flex items-center gap-2">
+                          <span>{game.handoffs} handoffs</span>
+                          <span className="text-border">·</span>
+                          <span className="flex items-center gap-0.5">
+                            <MapPin className="h-3 w-3" />
+                            {formatDistance(game)}
                           </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm truncate">
-                        {game.title}
-                      </h3>
-                      <p className="text-2xs text-muted-foreground flex items-center gap-2">
-                        <span>{game.handoffs} handoffs</span>
-                        <span className="text-border">·</span>
-                        <span className="flex items-center gap-0.5">
-                          <MapPin className="h-3 w-3" />
-                          {formatDistance(game)}
-                        </span>
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </CardContent>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </motion.div>
+
+      {/* Borrow History — only shown when logged in and data available */}
+      {!demoMode && !dataLoading && borrowHistory.length > 0 && (
+        <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="mt-6">
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Repeat className="h-4 w-4 text-coral" />
+            Games I've Borrowed
+          </h2>
+          <div className="space-y-2">
+            {borrowHistory.slice(0, 5).map((req) => (
+              <Card key={req.id} className="border-0 elevation-1 bg-white">
+                <CardContent className="p-3 flex items-center gap-3">
+                  {req.gamePhoto ? (
+                    <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 relative">
+                      <Image
+                        src={req.gamePhoto}
+                        alt={req.gameTitle}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 shrink-0 flex items-center justify-center">
+                      <Package className="h-4 w-4 text-primary/50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
+                    <p className="text-2xs text-muted-foreground">
+                      from {req.lenderName} · {req.status}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Lend History — only shown when logged in and data available */}
+      {!demoMode && !dataLoading && lendHistory.length > 0 && (
+        <motion.div {...fadeUp} transition={{ delay: 0.32 }} className="mt-6">
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary" />
+            Games I've Lent
+          </h2>
+          <div className="space-y-2">
+            {lendHistory.slice(0, 5).map((req) => (
+              <Card key={req.id} className="border-0 elevation-1 bg-white">
+                <CardContent className="p-3 flex items-center gap-3">
+                  {req.gamePhoto ? (
+                    <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 relative">
+                      <Image
+                        src={req.gamePhoto}
+                        alt={req.gameTitle}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 shrink-0 flex items-center justify-center">
+                      <Package className="h-4 w-4 text-primary/50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
+                    <p className="text-2xs text-muted-foreground">
+                      to {req.borrowerName} · {req.status}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Sign Out / Sign In */}
       <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="mt-8">

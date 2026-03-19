@@ -325,6 +325,108 @@ export async function fetchMemberGames(memberId: string): Promise<Game[]> {
   return (data as DbGame[]).map(mapGame);
 }
 
+// ─── Lending requests ─────────────────────────────────────────────────────
+
+export interface LendingRequest {
+  id: string;
+  gameId: string;
+  gameTitle: string;
+  gamePhoto: string | null;
+  borrowerId: string;
+  borrowerName: string;
+  lenderId: string;
+  lenderName: string;
+  status: "pending" | "accepted" | "active" | "completed" | "cancelled";
+  requestedAt: string;
+  completedAt: string | null;
+}
+
+interface DbLendingRequest {
+  id: string;
+  game_id: string;
+  borrower_id: string;
+  lender_id: string;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+  game?: { title: string; photos: string[] | null; image_url: string | null } | null;
+  borrower?: { name: string } | null;
+  lender?: { name: string } | null;
+}
+
+function mapLendingRequest(row: DbLendingRequest): LendingRequest {
+  return {
+    id: row.id,
+    gameId: row.game_id,
+    gameTitle: row.game?.title ?? "Unknown game",
+    gamePhoto: row.game?.photos?.[0] ?? row.game?.image_url ?? null,
+    borrowerId: row.borrower_id,
+    borrowerName: row.borrower?.name ?? "Unknown",
+    lenderId: row.lender_id,
+    lenderName: row.lender?.name ?? "Unknown",
+    status: (row.status as LendingRequest["status"]) ?? "pending",
+    requestedAt: row.created_at,
+    completedAt: row.completed_at ?? null,
+  };
+}
+
+/**
+ * Fetch lending requests where this member is the borrower.
+ * Returns [] gracefully if the table doesn't exist yet.
+ */
+export async function fetchBorrowHistory(memberId: string): Promise<LendingRequest[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("lending_requests")
+    .select(`
+      id, game_id, borrower_id, lender_id, status, created_at, completed_at,
+      game:games!lending_requests_game_id_fkey (title, photos, image_url),
+      lender:members!lending_requests_lender_id_fkey (name)
+    `)
+    .eq("borrower_id", memberId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    // Table may not exist yet — fail silently
+    if (error.code !== "42P01") {
+      console.error("[queries] fetchBorrowHistory error:", error.message);
+    }
+    return [];
+  }
+
+  return (data as DbLendingRequest[]).map(mapLendingRequest);
+}
+
+/**
+ * Fetch lending requests where this member is the lender.
+ * Returns [] gracefully if the table doesn't exist yet.
+ */
+export async function fetchLendHistory(memberId: string): Promise<LendingRequest[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("lending_requests")
+    .select(`
+      id, game_id, borrower_id, lender_id, status, created_at, completed_at,
+      game:games!lending_requests_game_id_fkey (title, photos, image_url),
+      borrower:members!lending_requests_borrower_id_fkey (name)
+    `)
+    .eq("lender_id", memberId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("[queries] fetchLendHistory error:", error.message);
+    }
+    return [];
+  }
+
+  return (data as DbLendingRequest[]).map(mapLendingRequest);
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
