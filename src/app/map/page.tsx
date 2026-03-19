@@ -119,6 +119,30 @@ export default function MapPage() {
   const [locating, setLocating] = useState(false);
 
   // Live game data — falls back to mock when Supabase is not configured
+  // TODO(real-data): fetchGames() already has the right query. Once the schema
+  // is applied (games + locations + members tables), remove the MOCK_GAMES
+  // default and let the real data load without the `liveGames.length > 0` guard.
+  // Exact Supabase query used by fetchGames() in src/lib/queries.ts:
+  //
+  //   supabase.from("games").select(`
+  //     *,
+  //     locations (
+  //       game_id, current_holder_id, neighborhood, lat, lng,
+  //       holder:members!locations_current_holder_id_fkey (
+  //         id, name, phone, avatar_url, neighborhood, lat, lng,
+  //         games_shared, total_handoffs, trust_score, bio, kid_ages,
+  //         is_founding_member, referral_code, referred_by, city, created_at
+  //       )
+  //     ),
+  //     owner:members!games_owner_id_fkey (
+  //       id, name, phone, avatar_url, neighborhood, lat, lng,
+  //       games_shared, total_handoffs, trust_score, bio, kid_ages,
+  //       is_founding_member, referral_code, referred_by, city, created_at
+  //     )
+  //   `).eq("is_available", true).order("listed_at", { ascending: false })
+  //
+  // To switch: change the two useState/useRef defaults from MOCK_GAMES to []
+  // and drop the `if (liveGames.length > 0)` guard below.
   const [allGames, setAllGames] = useState<Game[]>(MOCK_GAMES);
   const allGamesRef = useRef<Game[]>(MOCK_GAMES);
   useEffect(() => {
