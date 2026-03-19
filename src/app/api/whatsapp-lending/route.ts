@@ -63,6 +63,7 @@ interface LendingSession {
   neighborhood?: string;           // borrower's neighborhood (Aleph|Bet|Gimmel|Dalet|Hey)
   lenderPhone?: string;            // org-side only — never sent to borrower
   lenderMemberId?: string;
+  lenderNeighborhood?: string;     // lender's neighborhood for relay calc
   requestId?: string;              // lending_requests row id
   lastUpdated: number;
 }
@@ -76,6 +77,7 @@ interface LenderSession {
   lenderPhone: string;
   requestId: string;
   borrowerNeighborhood: string;
+  lenderNeighborhood: string;
   gameTitle: string;
   lastUpdated: number;
 }
@@ -603,15 +605,12 @@ async function handleLenderReply(
   const lenderSession = raw as LenderSession;
   if (lenderSession.step !== "AWAIT_LENDER_REPLY") return null;
 
-  const { requestId, borrowerNeighborhood, gameTitle } = lenderSession;
+  const { requestId, borrowerNeighborhood, lenderNeighborhood, gameTitle } = lenderSession;
 
   if (isYes(messageBody)) {
     // ── Lender agreed ────────────────────────────────────────────────────────
     const relayDesc = buildRelayDescription(
-      // We stored borrower neighborhood in the lender session; lender's own
-      // neighborhood is not in scope for the relay calc at this point.
-      // Use a placeholder — in production, look up from members table.
-      "your neighborhood",
+      lenderNeighborhood,
       borrowerNeighborhood
     );
 
@@ -766,6 +765,7 @@ export async function POST(req: NextRequest) {
         session.gameId = match.id;
         session.lenderPhone = match.lenderPhone ?? undefined;
         session.lenderMemberId = match.lenderMemberId ?? undefined;
+        session.lenderNeighborhood = match.lenderNeighborhood ?? undefined;
         session.step = "IDENTIFY_GAME";
 
         replyMessage =
@@ -830,6 +830,7 @@ export async function POST(req: NextRequest) {
               lenderPhone: session.lenderPhone,
               requestId,
               borrowerNeighborhood: neighborhood,
+              lenderNeighborhood: session.lenderNeighborhood ?? "Unknown",
               gameTitle: session.gameTitle,
               lastUpdated: Date.now(),
             }
