@@ -1,6 +1,19 @@
+/*
+ * MIGRATION — paste this into the Supabase SQL editor once, then deploy.
+ *
+ * create table if not exists whatsapp_sessions (
+ *   session_key  text primary key,
+ *   state        jsonb        not null,
+ *   step         text         not null,
+ *   updated_at   timestamptz  not null default now()
+ * );
+ *
+ * -- Optional: auto-purge rows older than 30 minutes via pg_cron
+ * -- select cron.schedule('purge-whatsapp-sessions', '0/5 * * * *',
+ * --   $$delete from whatsapp_sessions where updated_at < now() - interval '30 minutes'$$);
+ */
+
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 // ---------------------------------------------------------------------------
 // Conversation state machine
@@ -30,28 +43,127 @@ interface ConversationSession {
   lastUpdated: number;
 }
 
-// In-memory store keyed by phone number (good enough for prototype)
-const sessions = new Map<string, ConversationSession>();
+// ---------------------------------------------------------------------------
+// Supabase session persistence (replaces in-memory Map)
+// ---------------------------------------------------------------------------
 
-// Clean up sessions older than 2 hours
-function cleanupSessions() {
-  const TWO_HOURS = 2 * 60 * 60 * 1000;
-  const now = Date.now();
-  for (const [phone, session] of sessions.entries()) {
-    if (now - session.lastUpdated > TWO_HOURS) {
-      sessions.delete(phone);
+const THIRTY_MINUTES = 30 * 60 * 1000;
+
+function getSupabaseConfig(): { url: string; key: string } | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return { url, key };
+}
+
+async function getOrCreateSession(phone: string): Promise<ConversationSession> {
+  const cfg = getSupabaseConfig();
+
+  if (!cfg) {
+    // Fallback for local dev without Supabase env vars
+    return { state: "START", phone, lastUpdated: Date.now() };
+  }
+
+  try {
+    const res = await fetch(
+      `${cfg.url}/rest/v1/whatsapp_sessions?session_key=eq.${encodeURIComponent(phone)}&select=*`,
+      {
+        headers: {
+          apikey: cfg.key,
+          Authorization: `Bearer ${cfg.key}`,
+        },
+      }
+    );
+
+    if (res.ok) {
+      const rows: Array<{ state: ConversationSession; step: string; updated_at: string }> =
+        await res.json();
+
+      if (rows.length > 0) {
+        const row = rows[0];
+        const age = Date.now() - new Date(row.updated_at).getTime();
+
+        if (age <= THIRTY_MINUTES) {
+          // Valid session — return it with a refreshed lastUpdated
+          const session: ConversationSession = {
+            ...row.state,
+            state: row.step as ConversationState,
+            lastUpdated: Date.now(),
+          };
+          return session;
+        }
+
+        // Stale — delete and fall through to create a fresh one
+        await fetch(
+          `${cfg.url}/rest/v1/whatsapp_sessions?session_key=eq.${encodeURIComponent(phone)}`,
+          {
+            method: "DELETE",
+            headers: {
+              apikey: cfg.key,
+              Authorization: `Bearer ${cfg.key}`,
+            },
+          }
+        );
+      }
     }
+  } catch {
+    // If Supabase is unreachable, start fresh (degraded mode)
+  }
+
+  return { state: "START", phone, lastUpdated: Date.now() };
+}
+
+async function saveSession(session: ConversationSession): Promise<void> {
+  const cfg = getSupabaseConfig();
+  if (!cfg) return;
+
+  try {
+    await fetch(`${cfg.url}/rest/v1/whatsapp_sessions`, {
+      method: "POST",
+      headers: {
+        apikey: cfg.key,
+        Authorization: `Bearer ${cfg.key}`,
+        "Content-Type": "application/json",
+        // Upsert: insert or replace on conflict
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        session_key: session.phone,
+        // Store the full session object minus the step so we can recover all fields
+        state: {
+          phone: session.phone,
+          identifiedGame: session.identifiedGame,
+          missingPieces: session.missingPieces,
+          boxCondition: session.boxCondition,
+          lastUpdated: session.lastUpdated,
+        },
+        step: session.state,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch {
+    // Non-fatal — message still sends; session may reset on next cold start
   }
 }
 
-function getOrCreateSession(phone: string): ConversationSession {
-  cleanupSessions();
-  if (!sessions.has(phone)) {
-    sessions.set(phone, { state: "START", phone, lastUpdated: Date.now() });
+async function deleteSession(phone: string): Promise<void> {
+  const cfg = getSupabaseConfig();
+  if (!cfg) return;
+
+  try {
+    await fetch(
+      `${cfg.url}/rest/v1/whatsapp_sessions?session_key=eq.${encodeURIComponent(phone)}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: cfg.key,
+          Authorization: `Bearer ${cfg.key}`,
+        },
+      }
+    );
+  } catch {
+    // Non-fatal
   }
-  const session = sessions.get(phone)!;
-  session.lastUpdated = Date.now();
-  return session;
 }
 
 // ---------------------------------------------------------------------------
@@ -231,8 +343,9 @@ export async function POST(req: NextRequest) {
       mediaUrl = body.mediaUrl ?? body.MediaUrl0 ?? "";
     }
 
-    const session = getOrCreateSession(phone);
+    const session = await getOrCreateSession(phone);
     let replyMessage = "";
+    let sessionDeleted = false;
 
     // State machine
     switch (session.state) {
@@ -384,7 +497,8 @@ export async function POST(req: NextRequest) {
       case "FINALIZE": {
         if (isYes(messageBody)) {
           const saved = await saveGameToSupabase(session);
-          sessions.delete(phone); // Clear session after completion
+          await deleteSession(phone);
+          sessionDeleted = true;
 
           if (saved) {
             replyMessage =
@@ -400,7 +514,8 @@ export async function POST(req: NextRequest) {
               `תודה! המשחק שלך יתווסף לספרייה בקרוב.`;
           }
         } else if (isNo(messageBody)) {
-          sessions.delete(phone);
+          await deleteSession(phone);
+          sessionDeleted = true;
           replyMessage =
             'No problem! Send "add game" any time to start again.\n\n' +
             'בסדר! שלח "הוסף משחק" בכל עת להתחלת הליך חדש.';
@@ -413,9 +528,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update session timestamp
-    if (sessions.has(phone)) {
-      sessions.get(phone)!.lastUpdated = Date.now();
+    // Persist session state after processing (skip if session was just deleted)
+    if (!sessionDeleted) {
+      session.lastUpdated = Date.now();
+      await saveSession(session);
     }
 
     // Return TwiML for Twilio, or JSON for direct API usage
@@ -434,7 +550,7 @@ export async function POST(req: NextRequest) {
     // JSON response (testing / direct API)
     return NextResponse.json({
       reply: replyMessage,
-      state: sessions.get(phone)?.state ?? "DONE",
+      state: sessionDeleted ? "DONE" : session.state,
       phone,
     });
   } catch (err) {
