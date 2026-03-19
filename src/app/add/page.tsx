@@ -74,7 +74,13 @@ export default function AddGamePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoUrl: photoDataUrl }),
       });
-      if (!res.ok) throw new Error("API error");
+      if (!res.ok) {
+        if (res.status === 413) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error ?? "Photo too large. Please use a photo under 2MB.");
+        }
+        throw new Error("API error");
+      }
       const data = await res.json();
       if (data.confidence === "high" || data.confidence === "medium") {
         if (data.name) setTitle(data.name);
@@ -88,8 +94,9 @@ export default function AddGamePage() {
         setAiToast(t("add.ai_failed"));
         setStep("photos");
       }
-    } catch {
-      setAiToast(t("add.ai_failed"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      setAiToast(msg && msg !== "API error" ? msg : t("add.ai_failed"));
       setStep("photos");
     }
   };
@@ -101,14 +108,45 @@ export default function AddGamePage() {
     return () => clearTimeout(timer);
   }, [aiToast]);
 
+  const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2MB
+  const MAX_DIMENSION = 1200;
+
+  const resizeImageIfNeeded = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+          resolve(dataUrl);
+          return;
+        }
+        const scale = MAX_DIMENSION / Math.max(width, height);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(dataUrl); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const isFirstPhoto = photos.length === 0;
     Array.from(files).forEach((file, i) => {
+      if (file.size > MAX_FILE_BYTES) {
+        setAiToast(lang === "he" ? "התמונה גדולה מדי. אנא השתמש בתמונה מתחת ל-2MB." : "Photo too large. Please use a photo under 2MB.");
+        return;
+      }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
+      reader.onloadend = async () => {
+        const rawDataUrl = reader.result as string;
+        const dataUrl = await resizeImageIfNeeded(rawDataUrl);
         setPhotos((prev) => [...prev, dataUrl]);
         // Trigger AI identification on the very first photo added
         if (isFirstPhoto && i === 0) {
@@ -124,6 +162,42 @@ export default function AddGamePage() {
   };
 
   const canProceed = title && category && condition;
+
+  const uploadPhotosToStorage = async (
+    photoDataUrls: string[],
+    userId: string
+  ): Promise<string[]> => {
+    const supabase = createClient();
+    if (!supabase) return [];
+
+    const uploaded: string[] = [];
+    for (let i = 0; i < photoDataUrls.length; i++) {
+      try {
+        const res = await fetch(photoDataUrls[i]);
+        const blob = await res.blob();
+        const ext = blob.type === "image/png" ? "png" : "jpg";
+        const path = `${userId}/${Date.now()}-${i}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("game-photos")
+          .upload(path, blob, { contentType: blob.type, upsert: false });
+
+        if (uploadError) {
+          console.warn(`Photo ${i} upload failed:`, uploadError.message);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("game-photos")
+          .getPublicUrl(path);
+
+        uploaded.push(publicUrl);
+      } catch (err) {
+        console.warn(`Photo ${i} upload error:`, err);
+      }
+    }
+    return uploaded;
+  };
 
   const handleSubmit = async () => {
     setStep("submitting");
@@ -149,6 +223,11 @@ export default function AddGamePage() {
           fair: "fair",
         };
 
+        // Upload photos to Supabase Storage, fall back gracefully if bucket missing
+        const photoUrls = photos.length > 0
+          ? await uploadPhotosToStorage(photos, user.id)
+          : [];
+
         const { error } = await supabase.from("games").insert({
           title,
           description: description || null,
@@ -160,6 +239,7 @@ export default function AddGamePage() {
           player_count_max: parseInt(maxPlayers) || 4,
           owner_id: user.id,
           is_available: true,
+          photos: photoUrls.length > 0 ? photoUrls : null,
         });
 
         if (error) {
