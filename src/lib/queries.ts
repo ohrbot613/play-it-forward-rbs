@@ -427,6 +427,77 @@ export async function fetchLendHistory(memberId: string): Promise<LendingRequest
   return (data as DbLendingRequest[]).map(mapLendingRequest);
 }
 
+// ─── Community Wishes ─────────────────────────────────────────────────────
+
+/*
+ * SQL — run once in Supabase SQL editor if table does not exist:
+ *
+ * create table if not exists community_wishes (
+ *   id            uuid primary key default gen_random_uuid(),
+ *   title         text not null,
+ *   description   text not null default '',
+ *   neighborhood  text not null,
+ *   requester_id  uuid references auth.users(id) on delete set null,
+ *   status        text not null default 'open',   -- open | matched | fulfilled
+ *   urgency       text not null default 'normal', -- high | normal | low
+ *   category      text,
+ *   age_range     text,
+ *   responses     int not null default 0,
+ *   created_at    timestamptz not null default now(),
+ *   updated_at    timestamptz not null default now()
+ * );
+ *
+ * -- Enable RLS and allow anon inserts (adjust to taste):
+ * alter table community_wishes enable row level security;
+ * create policy "anyone can read wishes"  on community_wishes for select using (true);
+ * create policy "anyone can post wishes"  on community_wishes for insert with check (true);
+ */
+
+export interface CreateWishResult {
+  id: string | null;
+  success: boolean;
+}
+
+/**
+ * Insert a new community wish into the `community_wishes` table.
+ * Fails gracefully — returns { success: false, id: null } if Supabase is
+ * unconfigured or the table doesn't exist yet.
+ */
+export async function createWish(
+  gameName: string,
+  note: string,
+  userId: string | null,
+  neighborhood: string
+): Promise<CreateWishResult> {
+  const supabase = createClient();
+  if (!supabase) return { success: false, id: null };
+
+  const { data, error } = await supabase
+    .from("community_wishes")
+    .insert({
+      title: gameName.trim(),
+      description: note.trim(),
+      neighborhood,
+      requester_id: userId ?? null,
+      status: "open",
+      urgency: "normal",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    // Table may not exist yet (code 42P01) — fail silently
+    if (error.code !== "42P01") {
+      console.error("[queries] createWish error:", error.message);
+    }
+    return { success: false, id: null };
+  }
+
+  return { success: true, id: (data as { id: string } | null)?.id ?? null };
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
