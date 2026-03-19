@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, type GameCategory, type SortOption } from "@/lib/data";
+import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
+import { fetchGames, fetchGameStats } from "@/lib/queries";
 import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed } from "@/components/activity-feed";
@@ -34,8 +35,31 @@ export default function HomePage() {
   const [availableOnly, setAvailableOnly] = useState(false);
   const { t, lang } = useLanguage();
 
+  // Real data from Supabase; falls back to mock data when not configured
+  const [allGames, setAllGames] = useState<Game[]>(MOCK_GAMES);
+  const [totalShares, setTotalShares] = useState(() =>
+    MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0)
+  );
+  const [usingLiveData, setUsingLiveData] = useState(false);
+
+  useEffect(() => {
+    fetchGames().then((liveGames) => {
+      if (liveGames.length > 0) {
+        setAllGames(liveGames);
+        setTotalShares(liveGames.reduce((sum, g) => sum + g.handoffs, 0));
+        setUsingLiveData(true);
+      }
+    });
+
+    fetchGameStats().then(({ totalShares: shares, totalGames }) => {
+      if (totalGames > 0) {
+        setTotalShares(shares);
+      }
+    });
+  }, []);
+
   const games = useMemo(() => {
-    let filtered = MOCK_GAMES;
+    let filtered = allGames;
 
     if (category !== "all") {
       filtered = filtered.filter((g) => g.category === category);
@@ -72,9 +96,7 @@ export default function HomePage() {
     }
 
     return sorted;
-  }, [search, category, sort, maxDistance, availableOnly]);
-
-  const totalShares = MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0);
+  }, [allGames, search, category, sort, maxDistance, availableOnly]);
 
   return (
     <div className="px-4">
@@ -97,8 +119,8 @@ export default function HomePage() {
         </p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="font-medium text-foreground">{MOCK_GAMES.length}</span> {t("app.games_live")}
+            <span className={cn("inline-block h-1.5 w-1.5 rounded-full", usingLiveData ? "bg-emerald-400" : "bg-amber-400")} />
+            <span className="font-medium text-foreground">{allGames.length}</span> {t("app.games_live")}
           </span>
           <span className="text-border">|</span>
           <span>
