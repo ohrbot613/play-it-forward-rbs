@@ -17,6 +17,7 @@ import {
   type Game,
   type GameCategory,
 } from "@/lib/data";
+import { fetchGames } from "@/lib/queries";
 import {
   MapPin,
   X,
@@ -117,12 +118,24 @@ export default function MapPage() {
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(false);
 
+  // Live game data — falls back to mock when Supabase is not configured
+  const [allGames, setAllGames] = useState<Game[]>(MOCK_GAMES);
+  const allGamesRef = useRef<Game[]>(MOCK_GAMES);
+  useEffect(() => {
+    fetchGames().then((liveGames) => {
+      if (liveGames.length > 0) {
+        setAllGames(liveGames);
+        allGamesRef.current = liveGames;
+      }
+    });
+  }, []);
+
   // Filter games
   const userLat = userLocation?.lat ?? CENTER_LAT;
   const userLng = userLocation?.lng ?? CENTER_LNG;
 
   const filteredGames = useMemo(() => {
-    return MOCK_GAMES.filter((g) => {
+    return allGames.filter((g) => {
       if (!g.available) return false;
       if (categoryFilter !== "all" && g.category !== categoryFilter)
         return false;
@@ -135,7 +148,7 @@ export default function MapPage() {
       if (d > radiusKm) return false;
       return true;
     });
-  }, [categoryFilter, radiusKm, userLat, userLng]);
+  }, [allGames, categoryFilter, radiusKm, userLat, userLng]);
 
   const gamesWithinRadius = filteredGames.length;
 
@@ -200,7 +213,7 @@ export default function MapPage() {
       // Cluster source
       map.addSource("games", {
         type: "geojson",
-        data: buildGeoJSON(MOCK_GAMES.filter((g) => g.available)),
+        data: buildGeoJSON(allGamesRef.current.filter((g) => g.available)),
         cluster: true,
         clusterMaxZoom: 16,
         clusterRadius: 50,
@@ -318,7 +331,7 @@ export default function MapPage() {
       if (!e.features?.length) return;
       const props = e.features[0].properties;
       if (!props?.id) return;
-      const game = MOCK_GAMES.find((g) => g.id === props.id);
+      const game = allGamesRef.current.find((g) => g.id === props.id);
       if (game) {
         setSelectedGame(game);
         const geometry = e.features[0].geometry;
