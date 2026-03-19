@@ -195,6 +195,25 @@ const translations = {
   "wishes.i_have_it": { en: "I have this game!", he: "יש לי את המשחק הזה!" },
   "wishes.offer_sent": { en: "Great! We'll let them know.", he: "מעולה! נודיע להם." },
   "wishes.offer_cta": { en: "Offer to Help", he: "הצע עזרה" },
+  "wishes.offering": { en: "Sending...", he: "שולח..." },
+  "wishes.offer_error": { en: "Something went wrong. Try again.", he: "משהו השתבש. נסה שוב." },
+
+  // Add Wish modal
+  "wish.add_btn": { en: "Add a Wish", he: "הוסף בקשה" },
+  "wish.add_title": { en: "Add a Wish", he: "הוסף בקשה" },
+  "wish.add_subtitle": { en: "Tell the community what game you're looking for", he: "ספר לקהילה איזה משחק אתה מחפש" },
+  "wish.game_title": { en: "Game Title", he: "שם המשחק" },
+  "wish.game_title_placeholder": { en: "e.g. Catan, Ticket to Ride...", he: "לדוגמה: קטאן, Ticket to Ride..." },
+  "wish.notes": { en: "Notes (optional)", he: "הערות (אופציונלי)" },
+  "wish.notes_placeholder": { en: "Why do you want it? Any details?", he: "למה אתה רוצה את זה? פרטים נוספים?" },
+  "wish.neighborhood": { en: "Your Neighborhood", he: "השכונה שלך" },
+  "wish.neighborhood_placeholder": { en: "Select neighborhood", he: "בחר שכונה" },
+  "wish.submit": { en: "Post Wish", he: "פרסם בקשה" },
+  "wish.submitting": { en: "Posting...", he: "מפרסם..." },
+  "wish.success": { en: "Wish posted!", he: "הבקשה פורסמה!" },
+  "wish.success_sub": { en: "The community will see it shortly.", he: "הקהילה תראה אותה בקרוב." },
+  "wish.error": { en: "Something went wrong. Try again.", he: "משהו השתבש. נסה שוב." },
+  "wish.cancel": { en: "Cancel", he: "ביטול" },
 
   // Profile fallback (mock)
   "profile.founding_member": { en: "Founding Member", he: "חבר מייסד" },
@@ -245,7 +264,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     (key: TranslationKey, replacements?: Record<string, string | number>): string => {
       const entry = translations[key];
       if (!entry) return key;
-      let text = entry[lang] ?? entry.en;
+      let text: string = entry[lang] ?? entry.en;
       if (replacements) {
         for (const [k, v] of Object.entries(replacements)) {
           text = text.replace(`{${k}}`, String(v));

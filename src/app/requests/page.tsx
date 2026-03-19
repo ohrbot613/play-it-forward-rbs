@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   MOCK_WISHES,
   CATEGORIES,
@@ -24,9 +25,23 @@ import {
   Sparkles,
   CheckCircle2,
   HandHeart,
+  Plus,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NEIGHBORHOODS = ["Aleph", "Bet", "Gimmel", "Dalet", "Hey"] as const;
+type Neighborhood = (typeof NEIGHBORHOODS)[number];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -41,13 +56,43 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(diffDays / 7)}w ago`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WishCard
+// ─────────────────────────────────────────────────────────────────────────────
+
 function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
   const urgency = URGENCY_CONFIG[wish.urgency];
   const isFulfilled = wish.status === "fulfilled";
   const isMatched = wish.status === "matched";
   const isOpen = wish.status === "open";
-  const [offered, setOffered] = useState(false);
+
+  type OfferState = "idle" | "loading" | "done" | "error";
+  const [offerState, setOfferState] = useState<OfferState>("idle");
   const { t } = useLanguage();
+
+  async function handleOffer() {
+    setOfferState("loading");
+    try {
+      const res = await fetch("/api/lending-offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wishId: wish.id,
+          lenderUserId: "anonymous", // replace with auth user ID once auth is wired
+          gameTitle: wish.title,
+          lenderNeighborhood: wish.neighborhood,
+          requesterName: wish.requesterName,
+        }),
+      });
+
+      if (!res.ok) throw new Error("API error");
+      setOfferState("done");
+    } catch {
+      setOfferState("error");
+      // Reset to allow retry after 2s
+      setTimeout(() => setOfferState("idle"), 2000);
+    }
+  }
 
   return (
     <motion.div
@@ -154,7 +199,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
           {/* "I have this game!" CTA — only on open wishes */}
           {isOpen && (
             <AnimatePresence mode="wait">
-              {offered ? (
+              {offerState === "done" ? (
                 <motion.div
                   key="offered"
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -165,17 +210,33 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   {t("wishes.offer_sent")}
                 </motion.div>
+              ) : offerState === "error" ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 text-red-600 text-xs font-medium"
+                >
+                  <X className="h-4 w-4 shrink-0" />
+                  {t("wishes.offer_error")}
+                </motion.div>
               ) : (
                 <motion.button
                   key="offer-btn"
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 4 }}
-                  onClick={() => setOffered(true)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-semibold transition-colors active:scale-[0.98]"
+                  onClick={handleOffer}
+                  disabled={offerState === "loading"}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-semibold transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <HandHeart className="h-4 w-4" />
-                  {t("wishes.i_have_it")}
+                  {offerState === "loading" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <HandHeart className="h-4 w-4" />
+                  )}
+                  {offerState === "loading" ? t("wishes.offering") : t("wishes.i_have_it")}
                 </motion.button>
               )}
             </AnimatePresence>
@@ -186,12 +247,229 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AddWishModal
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface NewWishData {
+  id: string;
+  gameTitle: string;
+  neighborhood: string;
+  notes: string;
+}
+
+interface AddWishModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: (wish: NewWishData) => void;
+}
+
+function AddWishModal({ isOpen, onClose, onSuccess }: AddWishModalProps) {
+  const { t } = useLanguage();
+  const [gameTitle, setGameTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [neighborhood, setNeighborhood] = useState<Neighborhood | "">("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleClose() {
+    if (submitting) return;
+    // Reset state on close
+    setGameTitle("");
+    setNotes("");
+    setNeighborhood("");
+    setSubmitted(false);
+    setError("");
+    onClose();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!gameTitle.trim() || !neighborhood) return;
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/create-wish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameTitle: gameTitle.trim(), notes: notes.trim(), neighborhood }),
+      });
+
+      if (!res.ok) throw new Error("API error");
+
+      const data = await res.json();
+      setSubmitted(true);
+
+      setTimeout(() => {
+        onSuccess({
+          id: data.id ?? `local-${Date.now()}`,
+          gameTitle: gameTitle.trim(),
+          neighborhood,
+          notes: notes.trim(),
+        });
+        handleClose();
+      }, 1800);
+    } catch {
+      setError(t("wish.error"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+          />
+
+          {/* Bottom sheet */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-md"
+          >
+            <div className="bg-white rounded-t-3xl p-6 elevation-4">
+              {/* Handle */}
+              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5" />
+
+              {submitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-6"
+                >
+                  <div className="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                  </div>
+                  <p className="text-base font-semibold">{t("wish.success")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("wish.success_sub")}
+                  </p>
+                </motion.div>
+              ) : (
+                <>
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <h2 className="text-lg font-bold">{t("wish.add_title")}</h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("wish.add_subtitle")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleClose}
+                      className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                    {/* Game Title */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        {t("wish.game_title")} *
+                      </label>
+                      <Input
+                        value={gameTitle}
+                        onChange={(e) => setGameTitle(e.target.value)}
+                        placeholder={t("wish.game_title_placeholder")}
+                        className="h-12 rounded-2xl bg-background border-0 text-sm"
+                        required
+                      />
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        {t("wish.notes")}
+                      </label>
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder={t("wish.notes_placeholder")}
+                        className="rounded-2xl bg-background border-0 text-sm min-h-[72px] resize-none"
+                      />
+                    </div>
+
+                    {/* Neighborhood */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        {t("wish.neighborhood")} *
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={neighborhood}
+                          onChange={(e) => setNeighborhood(e.target.value as Neighborhood)}
+                          required
+                          className="w-full h-12 rounded-2xl bg-background border-0 text-sm px-4 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          <option value="" disabled>
+                            {t("wish.neighborhood_placeholder")}
+                          </option>
+                          {NEIGHBORHOODS.map((n) => (
+                            <option key={n} value={n}>
+                              {n}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Error message */}
+                    {error && (
+                      <p className="text-xs text-red-600 text-center">{error}</p>
+                    )}
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={!gameTitle.trim() || !neighborhood || submitting}
+                      className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98] flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-5 w-5" />
+                      )}
+                      {submitting ? t("wish.submitting") : t("wish.submit")}
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RequestsPage
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function RequestsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<GameCategory | "all">("all");
   const [statusFilter, setStatusFilter] = useState<
     "open" | "matched" | "fulfilled"
   >("open");
+  const [addWishOpen, setAddWishOpen] = useState(false);
+  const [localWishes, setLocalWishes] = useState<CommunityWish[]>([]);
   const { t, lang } = useLanguage();
 
   const STATUS_TABS: { value: "open" | "matched" | "fulfilled"; labelKey: "wishes.open" | "wishes.matched" | "wishes.fulfilled" }[] = [
@@ -200,8 +478,32 @@ export default function RequestsPage() {
     { value: "fulfilled", labelKey: "wishes.fulfilled" },
   ];
 
+  function handleWishSuccess(wish: NewWishData) {
+    // Prepend the new wish to the local list so it appears immediately
+    const newWish: CommunityWish = {
+      id: wish.id,
+      requesterId: "local-user",
+      requesterName: "You",
+      requesterAvatar: "https://api.dicebear.com/7.x/thumbs/svg?seed=local",
+      neighborhood: wish.neighborhood,
+      title: wish.gameTitle,
+      description: wish.notes || "",
+      category: "board-games",
+      ageRange: "All",
+      urgency: "normal",
+      status: "open",
+      createdAt: new Date().toISOString(),
+      responses: 0,
+    };
+    setLocalWishes((prev) => [newWish, ...prev]);
+    // Switch to open tab so user sees their wish
+    setStatusFilter("open");
+  }
+
+  const allWishes = useMemo(() => [...localWishes, ...MOCK_WISHES], [localWishes]);
+
   const wishes = useMemo(() => {
-    let filtered = MOCK_WISHES.filter((w) => w.status === statusFilter);
+    let filtered = allWishes.filter((w) => w.status === statusFilter);
 
     if (category !== "all") {
       filtered = filtered.filter((w) => w.category === category);
@@ -228,9 +530,9 @@ export default function RequestsPage() {
     });
 
     return filtered;
-  }, [search, category, statusFilter]);
+  }, [search, category, statusFilter, allWishes]);
 
-  const openCount = MOCK_WISHES.filter((w) => w.status === "open").length;
+  const openCount = allWishes.filter((w) => w.status === "open").length;
 
   return (
     <div className="px-4">
@@ -242,11 +544,23 @@ export default function RequestsPage() {
         className="relative pt-8 pb-6"
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-64 bg-gradient-to-b from-coral/[0.04] via-sunshine/[0.03] to-transparent -z-10 rounded-b-[40%]" />
-        <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">
-            {t("wishes.title")}
-          </h1>
-          <Heart className="h-5 w-5 text-coral" />
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">
+              {t("wishes.title")}
+            </h1>
+            <Heart className="h-5 w-5 text-coral" />
+          </div>
+          {/* Add a Wish button */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setAddWishOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-primary text-white text-xs font-semibold elevation-2 hover:elevation-3 transition-all duration-200 mt-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("wish.add_btn")}</span>
+            {lang === "he" && <span className="opacity-70 text-2xs">/ הוסף בקשה</span>}
+          </motion.button>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px]">
           {t("wishes.subtitle")}
@@ -386,6 +700,13 @@ export default function RequestsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Add Wish Modal */}
+      <AddWishModal
+        isOpen={addWishOpen}
+        onClose={() => setAddWishOpen(false)}
+        onSuccess={handleWishSuccess}
+      />
     </div>
   );
 }
