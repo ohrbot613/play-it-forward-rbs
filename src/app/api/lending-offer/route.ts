@@ -2,7 +2,7 @@
  * POST /api/lending-offer — REC-147
  *
  * Called when a community member clicks "I have this game!" on a wish card.
- * 1. Inserts a row into `lending_offers` table in Supabase (graceful if missing).
+ * 1. Inserts a row into `wish_offers` table in Supabase (graceful if missing).
  * 2. Sends a WhatsApp notification to the org via Twilio.
  *
  * Body: { wishId: string, lenderUserId: string, gameTitle: string, lenderNeighborhood?: string, requesterName?: string }
@@ -37,7 +37,7 @@ async function insertLendingOffer(params: {
   }
 
   try {
-    const res = await fetch(`${cfg.url}/rest/v1/lending_offers`, {
+    const res = await fetch(`${cfg.url}/rest/v1/wish_offers`, {
       method: "POST",
       headers: {
         apikey: cfg.key,
@@ -47,11 +47,7 @@ async function insertLendingOffer(params: {
       },
       body: JSON.stringify({
         wish_id: params.wishId,
-        lender_user_id: params.lenderUserId,
-        game_title: params.gameTitle,
-        lender_neighborhood: params.lenderNeighborhood ?? null,
-        requester_name: params.requesterName ?? null,
-        status: "pending",
+        offerer_id: params.lenderUserId,
         created_at: new Date().toISOString(),
       }),
     });
@@ -61,7 +57,7 @@ async function insertLendingOffer(params: {
       console.error("[lending-offer] Supabase insert failed:", res.status, text);
     }
   } catch (err) {
-    // Graceful — table may not exist yet. Still send WhatsApp.
+    // Graceful — table may not exist yet. WhatsApp link already opened client-side.
     console.error("[lending-offer] Supabase error (non-fatal):", err);
   }
 }

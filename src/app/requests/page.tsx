@@ -68,12 +68,23 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
 
   type OfferState = "idle" | "loading" | "done" | "error";
   const [offerState, setOfferState] = useState<OfferState>("idle");
+  const [localResponses, setLocalResponses] = useState(wish.responses);
   const { t } = useLanguage();
 
   async function handleOffer() {
     setOfferState("loading");
     try {
-      const res = await fetch("/api/lending-offer", {
+      // 1. Open WhatsApp link directly to the requester (if phone is available)
+      if (wish.requesterPhone) {
+        const phone = wish.requesterPhone.replace(/[^0-9]/g, "");
+        const text = encodeURIComponent(
+          `Hi ${wish.requesterName}, I saw your request for ${wish.title} on Play it Forward — I have it! When would work for you?`
+        );
+        window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+      }
+
+      // 2. Record the offer in Supabase (fire-and-forget — non-blocking)
+      fetch("/api/lending-offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,9 +94,12 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
           lenderNeighborhood: wish.neighborhood,
           requesterName: wish.requesterName,
         }),
+      }).catch(() => {
+        // Non-fatal — WhatsApp already opened
       });
 
-      if (!res.ok) throw new Error("API error");
+      // 3. Optimistically update the response count
+      setLocalResponses((n) => n + 1);
       setOfferState("done");
     } catch {
       setOfferState("error");
@@ -192,7 +206,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
             </div>
             <div className="flex items-center gap-1 text-2xs text-muted-foreground">
               <MessageCircle className="h-3.5 w-3.5" />
-              <span>{wish.responses}</span>
+              <span>{localResponses}</span>
             </div>
           </div>
 

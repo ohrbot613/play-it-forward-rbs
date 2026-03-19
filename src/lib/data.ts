@@ -99,6 +99,7 @@ export interface CommunityWish {
   requesterId: string;
   requesterName: string;
   requesterAvatar: string;
+  requesterPhone?: string;
   neighborhood: string;
   title: string;
   description: string;
@@ -1896,6 +1897,7 @@ export const MOCK_WISHES: CommunityWish[] = [
     requesterId: "u3",
     requesterName: "Yael Friedman",
     requesterAvatar: "https://i.pravatar.cc/150?u=yael",
+    requesterPhone: "+972521234567",
     neighborhood: "RBS Gimmel",
     title: "Settlers of Catan",
     description: "Looking for Catan for a Shabbat game night this week! We're 4 adults who love strategy games. Any expansion packs welcome too.",
@@ -1911,6 +1913,7 @@ export const MOCK_WISHES: CommunityWish[] = [
     requesterId: "u5",
     requesterName: "Dov Goldstein",
     requesterAvatar: "https://i.pravatar.cc/150?u=dov",
+    requesterPhone: "+972529876543",
     neighborhood: "RBS Aleph",
     title: "LEGO Technic sets for ages 8-12",
     description: "My boys are obsessed with building. Looking for any Technic or Creator sets — don't mind if pieces are missing, they'll figure it out!",
