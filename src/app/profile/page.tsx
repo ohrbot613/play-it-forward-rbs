@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
-import type { User } from "@supabase/supabase-js";
+import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 // Demo/mock user shown when Supabase auth is not configured
 const DEMO_USER_ID = "u1";
@@ -84,7 +84,7 @@ export default function ProfilePage() {
       return;
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
       if (!user) {
         // Supabase configured but user not signed in — redirect
         router.replace("/auth/signin?redirect=/profile");
@@ -96,7 +96,7 @@ export default function ProfilePage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       if (!session?.user) {
         router.replace("/auth/signin?redirect=/profile");
         return;
@@ -255,7 +255,7 @@ export default function ProfilePage() {
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">
-                Hi, {displayName}!
+                {t("profile.greeting", { name: displayName })}
               </h1>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-2xs font-semibold">
                 <Award className="h-3 w-3" />
@@ -358,7 +358,7 @@ export default function ProfilePage() {
                   className="h-9 rounded-xl"
                 >
                   <Plus className="h-4 w-4" />
-                  Add
+                  {t("profile.add_age")}
                 </Button>
               </div>
             </div>
@@ -451,7 +451,7 @@ export default function ProfilePage() {
           </div>
         ) : myGames.length === 0 ? (
           <p className="text-2xs text-muted-foreground text-center py-6">
-            {demoMode ? "No games yet." : "You haven't shared any games yet."}
+            {demoMode ? t("profile.no_games_demo") : t("profile.no_games_shared")}
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -487,7 +487,7 @@ export default function ProfilePage() {
                           {game.title}
                         </h3>
                         <p className="text-2xs text-muted-foreground flex items-center gap-2">
-                          <span>{game.handoffs} handoffs</span>
+                          <span>{t("profile.handoffs_count", { count: game.handoffs })}</span>
                           <span className="text-border">·</span>
                           <span className="flex items-center gap-0.5">
                             <MapPin className="h-3 w-3" />
@@ -510,7 +510,7 @@ export default function ProfilePage() {
         <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="mt-6">
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Repeat className="h-4 w-4 text-coral" />
-            Games I've Borrowed
+            {t("profile.games_borrowed")}
           </h2>
           <div className="space-y-2">
             {borrowHistory.slice(0, 5).map((req) => (
@@ -534,7 +534,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
                     <p className="text-2xs text-muted-foreground">
-                      from {req.lenderName} · {req.status}
+                      {t("profile.borrowed_from", { name: req.lenderName })} · {req.status}
                     </p>
                   </div>
                 </CardContent>
@@ -549,7 +549,7 @@ export default function ProfilePage() {
         <motion.div {...fadeUp} transition={{ delay: 0.32 }} className="mt-6">
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Package className="h-4 w-4 text-primary" />
-            Games I've Lent
+            {t("profile.games_lent")}
           </h2>
           <div className="space-y-2">
             {lendHistory.slice(0, 5).map((req) => (
@@ -573,7 +573,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
                     <p className="text-2xs text-muted-foreground">
-                      to {req.borrowerName} · {req.status}
+                      {t("profile.lent_to", { name: req.borrowerName })} · {req.status}
                     </p>
                   </div>
                 </CardContent>

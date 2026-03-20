@@ -114,7 +114,7 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
                   className="mt-2 flex items-center gap-1 text-2xs font-medium text-primary hover:text-primary/80 transition-colors"
                 >
                   <BookOpen className="h-3 w-3" />
-                  See journey →
+                  {t("game.see_journey")}
                 </Link>
               )}
             </CardContent>

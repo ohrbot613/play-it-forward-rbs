@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, Dice5, Users, Heart } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { MOCK_GAMES } from "@/lib/data";
@@ -33,7 +34,7 @@ function SignInContent() {
       setCheckingAuth(false);
       return;
     }
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
       if (user) {
         router.replace(redirectTo);
       } else {

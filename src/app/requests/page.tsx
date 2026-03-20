@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { createClient } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
@@ -83,13 +84,19 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
         window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
       }
 
-      // 2. Record the offer in Supabase (fire-and-forget — non-blocking)
+      // 2. Get the current authenticated user ID
+      const supabase = createClient();
+      const lenderUserId = supabase
+        ? (await supabase.auth.getUser()).data.user?.id ?? "anonymous"
+        : "anonymous";
+
+      // 3. Record the offer in Supabase (fire-and-forget — non-blocking)
       fetch("/api/lending-offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           wishId: wish.id,
-          lenderUserId: "anonymous", // replace with auth user ID once auth is wired
+          lenderUserId,
           gameTitle: wish.title,
           lenderNeighborhood: wish.neighborhood,
           requesterName: wish.requesterName,

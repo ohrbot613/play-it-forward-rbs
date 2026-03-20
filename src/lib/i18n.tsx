@@ -230,6 +230,27 @@ const translations = {
   "profile.sign_in_btn": { en: "Sign In", he: "התחבר" },
   "profile.demo_name": { en: "Miriam Katz", he: "מרים כץ" },
   "profile.games_in_circulation": { en: "games in circulation", he: "משחקים במחזור" },
+  "profile.greeting": { en: "Hi, {name}!", he: "שלום, {name}!" },
+  "profile.add_age": { en: "Add", he: "הוסף" },
+  "profile.no_games_demo": { en: "No games yet.", he: "עדיין אין משחקים." },
+  "profile.no_games_shared": { en: "You haven't shared any games yet.", he: "עדיין לא שיתפת משחקים." },
+  "profile.handoffs_count": { en: "{count} handoffs", he: "{count} העברות" },
+  "profile.games_borrowed": { en: "Games I've Borrowed", he: "משחקים שאשאלתי" },
+  "profile.borrowed_from": { en: "from {name}", he: "מ{name}" },
+  "profile.games_lent": { en: "Games I've Lent", he: "משחקים שהשאלתי" },
+  "profile.lent_to": { en: "to {name}", he: "ל{name}" },
+
+  // Map page
+  "map.your_location": { en: "Your Location", he: "מיקומך" },
+  "map.default_location": { en: "Ramat Beit Shemesh", he: "רמת בית שמש" },
+  "map.games_within_radius": { en: "{count} games within {radius}km", he: "{count} משחקים ברדיוס {radius}ק״מ" },
+  "map.filter_category": { en: "Category", he: "קטגוריה" },
+  "map.filter_all": { en: "All", he: "הכל" },
+  "map.filter_radius": { en: "Search Radius", he: "רדיוס חיפוש" },
+  "map.no_games_radius": { en: "No games in this radius — try expanding your search", he: "אין משחקים ברדיוס זה — נסה להרחיב את החיפוש" },
+
+  // Game card
+  "game.see_journey": { en: "See journey →", he: "ראה מסע ←" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

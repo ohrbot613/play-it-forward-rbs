@@ -245,7 +245,7 @@ export async function fetchGameReviews(gameId: string): Promise<Review[]> {
     return [];
   }
 
-  return (data ?? []).map((r) => ({
+  return (data as DbReview[] ?? []).map((r: DbReview) => ({
     id: r.id,
     userId: r.reviewer_id,
     gameId: r.game_id,
@@ -339,6 +339,16 @@ export interface LendingRequest {
   status: "pending" | "accepted" | "active" | "completed" | "cancelled";
   requestedAt: string;
   completedAt: string | null;
+}
+
+interface DbReview {
+  id: string;
+  game_id: string;
+  reviewer_id: string;
+  rating: number;
+  text: string | null;
+  helpful: number | null;
+  created_at: string;
 }
 
 interface DbLendingRequest {
@@ -512,6 +522,6 @@ export async function fetchGameStats(): Promise<{ totalGames: number; totalShare
 
   return {
     totalGames: data.length,
-    totalShares: data.reduce((sum, g) => sum + (g.handoffs ?? 0), 0),
+    totalShares: data.reduce((sum: number, g: { handoffs: number | null }) => sum + (g.handoffs ?? 0), 0),
   };
 }

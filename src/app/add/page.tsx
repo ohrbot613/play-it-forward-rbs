@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { useLanguage } from "@/lib/i18n";
 import Link from "next/link";
-import type { User } from "@supabase/supabase-js";
+import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 type Step = "form" | "photos" | "identifying" | "submitting" | "done";
 
@@ -50,11 +50,11 @@ export default function AddGamePage() {
       setAuthChecked(true);
       return;
     }
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
       setUser(user);
       setAuthChecked(true);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();

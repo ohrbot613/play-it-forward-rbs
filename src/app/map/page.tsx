@@ -30,6 +30,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 // RBS center
 const CENTER_LAT = 31.738;
@@ -100,6 +101,7 @@ function createRadiusGeoJSON(
 }
 
 export default function MapPage() {
+  const { t } = useLanguage();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -480,10 +482,10 @@ export default function MapPage() {
             <div className="flex items-center gap-2">
               <Navigation className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">
-                {userLocation ? "Your Location" : "Ramat Beit Shemesh"}
+                {userLocation ? t("map.your_location") : t("map.default_location")}
               </span>
               <span className="text-2xs text-muted-foreground ml-auto">
-                {gamesWithinRadius} games within {radiusKm}km
+                {t("map.games_within_radius", { count: gamesWithinRadius, radius: radiusKm })}
               </span>
             </div>
           </div>
@@ -515,7 +517,7 @@ export default function MapPage() {
             >
               {/* Category pills */}
               <p className="text-2xs font-medium text-muted-foreground mb-2">
-                Category
+                {t("map.filter_category")}
               </p>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 <button
@@ -527,7 +529,7 @@ export default function MapPage() {
                       : "bg-muted text-muted-foreground"
                   )}
                 >
-                  All
+                  {t("map.filter_all")}
                 </button>
                 {CATEGORIES.map((cat) => (
                   <button
@@ -552,7 +554,7 @@ export default function MapPage() {
 
               {/* Radius pills */}
               <p className="text-2xs font-medium text-muted-foreground mb-2">
-                Search Radius
+                {t("map.filter_radius")}
               </p>
               <div className="flex gap-1.5">
                 {RADIUS_OPTIONS.map((opt) => (
@@ -574,7 +576,7 @@ export default function MapPage() {
               {/* Games within radius badge */}
               {gamesWithinRadius === 0 && (
                 <p className="text-xs text-coral mt-3 text-center">
-                  No games in this radius — try expanding your search
+                  {t("map.no_games_radius")}
                 </p>
               )}
             </motion.div>
