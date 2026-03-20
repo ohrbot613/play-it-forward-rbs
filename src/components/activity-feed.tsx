@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Package, UserPlus, Heart, Repeat, Gift, Star, Hand, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { MOCK_GAMES, MOCK_USERS } from "@/lib/data";
 
 type ActivityType = "game-added" | "request-fulfilled" | "new-member" | "game-shared" | "game-donated" | "review" | "request" | "milestone";
 
@@ -26,92 +28,10 @@ const ACTIVITY_ICONS: Record<ActivityType, { icon: typeof Package; bg: string; c
   milestone: { icon: PartyPopper, bg: "bg-emerald-50", color: "text-emerald-600" },
 };
 
-const MOCK_ACTIVITY: ActivityItem[] = [
-  {
-    id: "a1",
-    type: "game-shared",
-    message: "Miriam K. shared Settlers of Catan with Yosef L.",
-    timestamp: "2026-03-17T09:30:00",
-    neighborhood: "RBS Aleph",
-  },
-  {
-    id: "a2",
-    type: "new-member",
-    message: "Chana R. joined Play it Forward from RBS Bet",
-    timestamp: "2026-03-17T08:15:00",
-    neighborhood: "RBS Bet",
-  },
-  {
-    id: "a3",
-    type: "game-added",
-    message: "Sarah B. added LEGO City Police Station to the catalog",
-    timestamp: "2026-03-16T19:45:00",
-    neighborhood: "RBS Bet",
-  },
-  {
-    id: "a4",
-    type: "request-fulfilled",
-    message: "Ticket to Ride request fulfilled for Devorah G.",
-    timestamp: "2026-03-16T17:20:00",
-    neighborhood: "RBS Aleph",
-  },
-  {
-    id: "a5",
-    type: "game-donated",
-    message: "Avi M. donated Pandemic to the community library",
-    timestamp: "2026-03-16T14:00:00",
-    neighborhood: "RBS Aleph",
-  },
-  {
-    id: "a6",
-    type: "review",
-    message: "Rivka S. left a 5-star review for Codenames",
-    timestamp: "2026-03-16T11:30:00",
-    neighborhood: "RBS Gimmel",
-  },
-  {
-    id: "a7",
-    type: "request",
-    message: "3 people requested Dixit this week",
-    timestamp: "2026-03-15T20:00:00",
-    neighborhood: "RBS Aleph",
-  },
-  {
-    id: "a8",
-    type: "new-member",
-    message: "Moshe and Leah F. joined from Old Beit Shemesh",
-    timestamp: "2026-03-15T16:30:00",
-    neighborhood: "Old Beit Shemesh",
-  },
-  {
-    id: "a9",
-    type: "game-shared",
-    message: "Azriel K. shared Magnetic Tiles set with neighbor",
-    timestamp: "2026-03-15T14:15:00",
-    neighborhood: "RBS Gimmel",
-  },
-  {
-    id: "a10",
-    type: "milestone",
-    message: "Community hit 200 total shares!",
-    timestamp: "2026-03-15T10:00:00",
-    neighborhood: "All",
-  },
-  {
-    id: "a11",
-    type: "game-added",
-    message: "Nechama W. added 3 puzzle sets to the catalog",
-    timestamp: "2026-03-14T18:00:00",
-    neighborhood: "RBS Aleph",
-  },
-  {
-    id: "a12",
-    type: "request-fulfilled",
-    message: "Kingdomino delivered to Tzvi B. via relay volunteer",
-    timestamp: "2026-03-14T15:30:00",
-    neighborhood: "RBS Bet",
-  },
-];
+/** Returns an ISO timestamp string offset by `hoursAgo` hours from now */
+function hoursBack(hoursAgo: number): string {
+  return new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
+}
 
 function timeAgo(timestamp: string): string {
   const now = new Date();
@@ -127,8 +47,100 @@ function timeAgo(timestamp: string): string {
   return `${diffDay}d ago`;
 }
 
+/** Pick a first-name initial from a full name. E.g. "Miriam Katz" → "Miriam K." */
+function shortName(fullName: string): string {
+  const parts = fullName.trim().split(" ");
+  if (parts.length === 1) return fullName;
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+}
+
 export function ActivityFeed() {
   const { t } = useLanguage();
+
+  const activity = useMemo((): ActivityItem[] => {
+    // Pull a deterministic but varied slice of real data
+    const games = MOCK_GAMES.slice(0, 20);
+    const users = MOCK_USERS;
+
+    // Helper: get user/game by round-robin index
+    const u = (i: number) => users[i % users.length];
+    const g = (i: number) => games[i % games.length];
+
+    const items: ActivityItem[] = [
+      {
+        id: "act-1",
+        type: "game-shared",
+        message: `${shortName(u(0).name)} shared ${g(0).title} with ${shortName(u(1).name)}`,
+        timestamp: hoursBack(2),
+        neighborhood: u(0).neighborhood,
+      },
+      {
+        id: "act-2",
+        type: "new-member",
+        message: `${shortName(u(2).name)} joined Play it Forward from ${u(2).neighborhood}`,
+        timestamp: hoursBack(5),
+        neighborhood: u(2).neighborhood,
+      },
+      {
+        id: "act-3",
+        type: "game-added",
+        message: `${shortName(u(3).name)} added ${g(3).title} to the catalog`,
+        timestamp: hoursBack(18),
+        neighborhood: u(3).neighborhood,
+      },
+      {
+        id: "act-4",
+        type: "request-fulfilled",
+        message: `${g(4).title} request fulfilled for ${shortName(u(4).name)}`,
+        timestamp: hoursBack(26),
+        neighborhood: u(4).neighborhood,
+      },
+      {
+        id: "act-5",
+        type: "game-donated",
+        message: `${shortName(u(5 % users.length).name)} donated ${g(5).title} to the community library`,
+        timestamp: hoursBack(34),
+        neighborhood: u(5 % users.length).neighborhood,
+      },
+      {
+        id: "act-6",
+        type: "review",
+        message: `${shortName(u(1).name)} left a 5-star review for ${g(6).title}`,
+        timestamp: hoursBack(42),
+        neighborhood: u(1).neighborhood,
+      },
+      {
+        id: "act-7",
+        type: "request",
+        message: `${g(7).requestCount + 1} people requested ${g(7).title} this week`,
+        timestamp: hoursBack(55),
+        neighborhood: u(2).neighborhood,
+      },
+      {
+        id: "act-8",
+        type: "new-member",
+        message: `${shortName(u(4 % users.length).name)} joined from ${u(4 % users.length).neighborhood}`,
+        timestamp: hoursBack(68),
+        neighborhood: u(4 % users.length).neighborhood,
+      },
+      {
+        id: "act-9",
+        type: "game-shared",
+        message: `${shortName(u(0).name)} shared ${g(8).title} with a neighbour`,
+        timestamp: hoursBack(80),
+        neighborhood: u(0).neighborhood,
+      },
+      {
+        id: "act-10",
+        type: "milestone",
+        message: `Community hit ${Math.max(200, MOCK_GAMES.reduce((sum, game) => sum + game.handoffs, 0))} total shares!`,
+        timestamp: hoursBack(96),
+        neighborhood: "All",
+      },
+    ];
+
+    return items;
+  }, []);
 
   return (
     <motion.div
@@ -143,7 +155,7 @@ export function ActivityFeed() {
       </div>
 
       <div className="space-y-2.5">
-        {MOCK_ACTIVITY.map((item, i) => {
+        {activity.map((item, i) => {
           const config = ACTIVITY_ICONS[item.type];
           const Icon = config.icon;
 
