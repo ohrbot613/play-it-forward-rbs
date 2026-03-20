@@ -162,6 +162,7 @@ const translations = {
 
   // Dashboard
   "nav.dashboard": { en: "Dashboard", he: "לוח בקרה" },
+  "dash.demo_banner": { en: "Demo Mode — data shown is sample data only", he: "מצב הדגמה — הנתונים המוצגים הם לדוגמה בלבד" },
   "dash.title": { en: "Lender Dashboard", he: "לוח המשאיל" },
   "dash.subtitle": { en: "Manage your games & requests", he: "נהל את המשחקים והבקשות שלך" },
   "dash.tab_requests": { en: "Requests", he: "בקשות" },

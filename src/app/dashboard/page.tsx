@@ -200,6 +200,11 @@ export default function DashboardPage() {
 
   return (
     <div className="px-4">
+      {/* Demo Mode Banner */}
+      <div className="mx-[-1rem] mb-0 px-4 py-2.5 bg-amber-400 text-amber-900 text-xs font-semibold text-center tracking-wide">
+        {t("dash.demo_banner")}
+      </div>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
