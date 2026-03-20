@@ -47,7 +47,7 @@ export default function GameDetailPage() {
     fair: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400", key: "game.fair" },
   };
 
-  const COORDINATOR_PHONE = "972544444444";
+  const COORDINATOR_PHONE = process.env.NEXT_PUBLIC_COORDINATOR_PHONE || "972544444444";
   const coordinatorRequestUrl = `https://wa.me/${COORDINATOR_PHONE}?text=${encodeURIComponent(
     `Hi, I'd like to borrow ${game.title} (ID: ${game.id}). Please coordinate with the owner on my behalf.`
   )}`;

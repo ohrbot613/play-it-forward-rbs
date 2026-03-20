@@ -146,7 +146,7 @@ export default function DashboardPage() {
     { key: "games", labelKey: "dash.tab_games", icon: Gamepad2, count: t("dash.games_count", { count: myGames.length }) },
   ];
 
-  const COORDINATOR_PHONE = "972544444444";
+  const COORDINATOR_PHONE = process.env.NEXT_PUBLIC_COORDINATOR_PHONE || "972544444444";
 
   async function handleAccept(id: string) {
     // Optimistic UI update
