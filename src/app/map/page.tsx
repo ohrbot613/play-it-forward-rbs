@@ -107,6 +107,7 @@ export default function MapPage() {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
+  const [hasToken, setHasToken] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -184,7 +185,7 @@ export default function MapPage() {
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
-      console.error("Missing NEXT_PUBLIC_MAPBOX_TOKEN");
+      setHasToken(false);
       return;
     }
     mapboxgl.accessToken = token;
@@ -692,17 +693,14 @@ export default function MapPage() {
         )}
       </AnimatePresence>
 
-      {/* No token fallback */}
-      {!process.env.NEXT_PUBLIC_MAPBOX_TOKEN && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/90 z-50">
-          <div className="text-center p-6">
-            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold text-lg mb-1">Map Setup Required</h3>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Add your Mapbox token to <code>.env.local</code> as{" "}
-              <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> to enable the interactive
-              map.
-            </p>
+      {/* No token fallback — clean demo-safe placeholder */}
+      {!hasToken && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background z-50">
+          <div className="text-center p-8">
+            <MapPin className="h-14 w-14 text-primary/30 mx-auto mb-4" />
+            <h3 className="font-bold text-xl mb-1">{t("map.no_token_title")}</h3>
+            <p className="text-sm text-primary font-medium mb-3">{t("map.no_token_coming_soon")}</p>
+            <p className="text-xs text-muted-foreground">{t("map.no_token_neighborhoods")}</p>
           </div>
         </div>
       )}

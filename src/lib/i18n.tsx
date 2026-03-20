@@ -257,6 +257,16 @@ const translations = {
   "map.filter_all": { en: "All", he: "הכל" },
   "map.filter_radius": { en: "Search Radius", he: "רדיוס חיפוש" },
   "map.no_games_radius": { en: "No games in this radius — try expanding your search", he: "אין משחקים ברדיוס זה — נסה להרחיב את החיפוש" },
+  "map.no_token_title": { en: "Neighborhood Map", he: "מפת השכונות" },
+  "map.no_token_coming_soon": { en: "Coming soon", he: "בקרוב" },
+  "map.no_token_neighborhoods": { en: "Neighborhoods: Aleph · Bet · Gimmel · Dalet · Hey", he: "שכונות: אלף · בית · גימל · דלת · הא" },
+
+  // Time
+  "time.just_now": { en: "just now", he: "כרגע" },
+  "time.hr_ago": { en: "{count}h ago", he: "לפני {count}ש׳" },
+  "time.yesterday": { en: "yesterday", he: "אתמול" },
+  "time.days_ago": { en: "{count}d ago", he: "לפני {count}י׳" },
+  "time.weeks_ago": { en: "{count}w ago", he: "לפני {count}ש׳" },
 
   // Game card
   "game.see_journey": { en: "See journey →", he: "ראה מסע ←" },

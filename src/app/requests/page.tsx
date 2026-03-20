@@ -44,17 +44,17 @@ type Neighborhood = (typeof NEIGHBORHOODS)[number];
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: ReturnType<typeof useLanguage>["t"]): string {
   const now = new Date();
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
   const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHrs < 1) return "just now";
-  if (diffHrs < 24) return `${diffHrs}h ago`;
+  if (diffHrs < 1) return t("time.just_now");
+  if (diffHrs < 24) return t("time.hr_ago", { count: diffHrs });
   const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays === 1) return t("time.yesterday");
+  if (diffDays < 7) return t("time.days_ago", { count: diffDays });
+  return t("time.weeks_ago", { count: Math.floor(diffDays / 7) });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
                 <span className="text-border">|</span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {timeAgo(wish.createdAt)}
+                  {timeAgo(wish.createdAt, t)}
                 </span>
               </div>
             </div>
