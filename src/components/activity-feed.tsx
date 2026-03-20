@@ -114,7 +114,7 @@ const MOCK_ACTIVITY: ActivityItem[] = [
 ];
 
 function timeAgo(timestamp: string): string {
-  const now = new Date("2026-03-17T12:00:00");
+  const now = new Date();
   const then = new Date(timestamp);
   const diffMs = now.getTime() - then.getTime();
   const diffMin = Math.floor(diffMs / 60000);

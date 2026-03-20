@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase";
 
 interface Toast {
   id: string;
@@ -120,7 +121,7 @@ const INITIAL_LOANS: ActiveLoan[] = [
 type Tab = "requests" | "loans" | "games";
 
 function daysAgo(dateStr: string, t: ReturnType<typeof useLanguage>["t"]): string {
-  const now = new Date("2026-03-17");
+  const now = new Date();
   const date = new Date(dateStr);
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
   if (diff === 0) return t("dash.today");
@@ -145,18 +146,49 @@ export default function DashboardPage() {
     { key: "games", labelKey: "dash.tab_games", icon: Gamepad2, count: t("dash.games_count", { count: myGames.length }) },
   ];
 
-  function handleAccept(id: string) {
+  const COORDINATOR_PHONE = "972544444444";
+
+  async function handleAccept(id: string) {
+    // Optimistic UI update
+    const request = requests.find((r) => r.id === id);
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "accepted" as const } : r))
     );
     addToast(t("dash.toast_accepted"), "success");
+
+    // Persist to Supabase (fire-and-forget; UI already updated)
+    const supabase = createClient();
+    if (supabase) {
+      void supabase
+        .from("lending_offers")
+        .update({ status: "accepted" })
+        .eq("id", id);
+    }
+
+    // Open WhatsApp deep-link to coordinator confirming acceptance
+    if (request) {
+      const message = encodeURIComponent(
+        `Hi, I'd like to confirm that I've accepted the borrow request for "${request.gameTitle}" from ${request.requesterName}. Please coordinate the handoff. Request ID: ${id}`
+      );
+      window.open(`https://wa.me/${COORDINATOR_PHONE}?text=${message}`, "_blank");
+    }
   }
 
-  function handleDecline(id: string) {
+  async function handleDecline(id: string) {
+    // Optimistic UI update
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "declined" as const } : r))
     );
     addToast(t("dash.toast_declined"), "neutral");
+
+    // Persist to Supabase (fire-and-forget; UI already updated)
+    const supabase = createClient();
+    if (supabase) {
+      void supabase
+        .from("lending_offers")
+        .update({ status: "declined" })
+        .eq("id", id);
+    }
   }
 
   function handleReturn(id: string) {
