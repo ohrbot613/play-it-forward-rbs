@@ -32,6 +32,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "photoUrl is required" }, { status: 400 });
     }
 
+    // Reject oversized images — base64 is ~33% larger than binary, so 2MB binary ≈ 2.7MB base64
+    const MAX_BASE64_BYTES = 2 * 1024 * 1024 * 1.4; // ~2.8MB base64 ceiling for a 2MB image
+    if (photoUrl.length > MAX_BASE64_BYTES) {
+      return NextResponse.json(
+        { error: "Photo too large. Please use a photo under 2MB." },
+        { status: 413 }
+      );
+    }
+
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "OpenRouter API key not configured" }, { status: 500 });
