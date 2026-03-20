@@ -22,6 +22,54 @@ import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 type Step = "form" | "photos" | "identifying" | "submitting" | "done";
 
+const GAME_CATEGORIES = [
+  "Strategy",
+  "Family",
+  "Party",
+  "Educational",
+  "Cooperative",
+  "Puzzle",
+  "Card Game",
+  "Abstract",
+  "Trivia",
+  "Other",
+] as const;
+
+type GameType = typeof GAME_CATEGORIES[number];
+
+const AGE_RANGES = ["3+", "5+", "7+", "10+", "12+", "14+", "18+", "All Ages"] as const;
+type AgeRange = typeof AGE_RANGES[number];
+
+// Map AI-returned originalCategory to our GameType
+const AI_CATEGORY_TO_GAME_TYPE: Record<string, GameType> = {
+  Strategy: "Strategy",
+  Family: "Family",
+  Party: "Party",
+  Children: "Educational",
+  Cooperative: "Cooperative",
+  "Card Game": "Card Game",
+  "Word Game": "Party",
+  Abstract: "Abstract",
+  RPG: "Strategy",
+  Trivia: "Trivia",
+  Other: "Other",
+};
+
+// Map AI ageGroup string to AgeRange
+function mapAiAgeGroup(ageGroup: string): AgeRange | "" {
+  const match = ageGroup?.match(/\d+/);
+  if (!match) return "";
+  const age = parseInt(match[0]);
+  if (age <= 3) return "3+";
+  if (age <= 5) return "5+";
+  if (age <= 7) return "7+";
+  if (age <= 10) return "10+";
+  if (age <= 12) return "12+";
+  if (age <= 14) return "14+";
+  if (age <= 18) return "18+";
+  return "All Ages";
+}
+
 const pageVariants = {
   enter: { opacity: 0, x: 20 },
   center: { opacity: 1, x: 0 },
@@ -42,6 +90,8 @@ export default function AddGamePage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [aiFilled, setAiFilled] = useState(false);
   const [aiToast, setAiToast] = useState<string | null>(null);
+  const [gameType, setGameType] = useState<GameType | "">("");
+  const [ageRange, setAgeRange] = useState<AgeRange | "">("");
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -88,6 +138,13 @@ export default function AddGamePage() {
         if (data.category) setCategory(data.category as GameCategory);
         if (data.minPlayers) setMinPlayers(String(data.minPlayers));
         if (data.maxPlayers) setMaxPlayers(String(data.maxPlayers));
+        if (data.originalCategory && AI_CATEGORY_TO_GAME_TYPE[data.originalCategory]) {
+          setGameType(AI_CATEGORY_TO_GAME_TYPE[data.originalCategory]);
+        }
+        if (data.ageGroup) {
+          const mapped = mapAiAgeGroup(data.ageGroup);
+          if (mapped) setAgeRange(mapped);
+        }
         setAiFilled(true);
         setStep("form");
       } else {
@@ -240,6 +297,8 @@ export default function AddGamePage() {
           owner_id: user.id,
           is_available: true,
           photos: photoUrls.length > 0 ? photoUrls : null,
+          game_type: gameType || null,
+          age_range: ageRange || null,
         });
 
         if (error) {
@@ -344,6 +403,8 @@ export default function AddGamePage() {
             setAgeGroups([]);
             setPhotos([]);
             setAiFilled(false);
+            setGameType("");
+            setAgeRange("");
           }}
           variant="outline"
           className="rounded-2xl h-11 px-5"
@@ -512,6 +573,46 @@ export default function AddGamePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Game Type (detailed category) */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {t("add.category_select")} <span className="text-muted-foreground font-normal text-xs">{t("add.optional")}</span>
+          </label>
+          <select
+            value={gameType}
+            onChange={(e) => setGameType(e.target.value as GameType | "")}
+            className={cn(
+              "w-full h-12 rounded-2xl bg-white border-0 elevation-1 px-4 text-sm focus:outline-none focus:elevation-2 transition-shadow appearance-none",
+              !gameType && "text-muted-foreground"
+            )}
+          >
+            <option value="">{t("add.category_select_placeholder")}</option>
+            {GAME_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Age Range */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {t("add.age_range")} <span className="text-muted-foreground font-normal text-xs">{t("add.optional")}</span>
+          </label>
+          <select
+            value={ageRange}
+            onChange={(e) => setAgeRange(e.target.value as AgeRange | "")}
+            className={cn(
+              "w-full h-12 rounded-2xl bg-white border-0 elevation-1 px-4 text-sm focus:outline-none focus:elevation-2 transition-shadow appearance-none",
+              !ageRange && "text-muted-foreground"
+            )}
+          >
+            <option value="">{t("add.age_range_placeholder")}</option>
+            {AGE_RANGES.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
         </div>
 
         {/* Age Groups */}
