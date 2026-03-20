@@ -331,8 +331,24 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const DEFAULT_LANGUAGE_CONTEXT: LanguageContextType = {
+  lang: "en",
+  setLang: () => {},
+  t: (key, replacements) => {
+    const entry = translations[key];
+    if (!entry) return key as string;
+    let text: string = entry.en;
+    if (replacements) {
+      for (const [k, v] of Object.entries(replacements)) {
+        text = text.replace(`{${k}}`, String(v));
+      }
+    }
+    return text;
+  },
+  dir: "ltr",
+};
+
 export function useLanguage() {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLanguage must be used within LanguageProvider");
-  return ctx;
+  return ctx ?? DEFAULT_LANGUAGE_CONTEXT;
 }
