@@ -68,6 +68,10 @@ const translations = {
   "game.good": { en: "Good", he: "טוב" },
   "game.fair": { en: "Fair", he: "סביר" },
   "game.shared_x": { en: "{count}x shared", he: "שותף {count} פעמים" },
+  "game.request_to_borrow": { en: "Request to Borrow", he: "בקש להשאיל" },
+  "game.coordinator_help": { en: "Our coordinator will arrange the handoff with the owner on your behalf.", he: "הרכז שלנו ידאג לסידור עם הבעלים בשמך." },
+  "game.join_waitlist": { en: "Currently Borrowed — Join Waitlist", he: "מושאל כרגע — הצטרף לרשימת המתנה" },
+  "game.waitlist_help": { en: "Message our coordinator and we'll notify you when it's available.", he: "שלח הודעה לרכז ונודיע לך כשיהיה זמין." },
 
   // Request modal
   "modal.request_title": { en: "Request This Game", he: "בקש את המשחק" },
@@ -137,6 +141,10 @@ const translations = {
   "add.identifying": { en: "Identifying game...", he: "מזהה משחק..." },
   "add.ai_filled": { en: "AI filled this in — tap to edit", he: "AI מילא את זה — לחץ לעריכה" },
   "add.ai_failed": { en: "Couldn't identify game — please fill in manually", he: "לא הצלחנו לזהות את המשחק — נא למלא ידנית" },
+  "add.age_range": { en: "Age Range", he: "טווח גיל" },
+  "add.age_range_placeholder": { en: "Select age range", he: "בחר טווח גיל" },
+  "add.category_select": { en: "Game Category", he: "קטגוריית משחק" },
+  "add.category_select_placeholder": { en: "Select category", he: "בחר קטגוריה" },
 
   // Empty states
   "empty.no_games": { en: "No games found", he: "לא נמצאו משחקים" },

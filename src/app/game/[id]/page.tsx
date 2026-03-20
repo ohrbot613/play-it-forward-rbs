@@ -47,7 +47,13 @@ export default function GameDetailPage() {
     fair: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400", key: "game.fair" },
   };
 
-  const whatsappUrl = formatWhatsAppRequest(game.currentHolder.phone, game.title, "Guest", game.ownershipType);
+  const COORDINATOR_PHONE = "972544444444";
+  const coordinatorRequestUrl = `https://wa.me/${COORDINATOR_PHONE}?text=${encodeURIComponent(
+    `Hi, I'd like to borrow ${game.title} (ID: ${game.id}). Please coordinate with the owner on my behalf.`
+  )}`;
+  const coordinatorWaitlistUrl = `https://wa.me/${COORDINATOR_PHONE}?text=${encodeURIComponent(
+    `Hi, I'd like to join the waitlist for ${game.title} (ID: ${game.id}). Please let me know when it becomes available.`
+  )}`;
   const owner = getUser(game.ownerId);
   const condition = conditionKeys[game.condition];
 
@@ -343,13 +349,13 @@ export default function GameDetailPage() {
             {game.available ? (
               <>
                 <a
-                  href={whatsappUrl}
+                  href={coordinatorRequestUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#1eba59] text-white font-semibold text-base transition-all duration-200 elevation-3 hover:elevation-4 active:scale-[0.98]"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  {t("game.request_whatsapp")}
+                  {t("game.request_to_borrow")}
                 </a>
                 <button
                   onClick={() => setRequestModalOpen(true)}
@@ -359,7 +365,7 @@ export default function GameDetailPage() {
                   {t("game.express_interest")}
                 </button>
                 <p className="text-center text-2xs text-muted-foreground mt-2">
-                  {t("game.whatsapp_help")}
+                  {t("game.coordinator_help")}
                 </p>
               </>
             ) : (
@@ -367,15 +373,17 @@ export default function GameDetailPage() {
                 <div className="flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl bg-muted text-muted-foreground font-semibold text-base cursor-not-allowed">
                   {t("game.currently_unavailable")}
                 </div>
-                <button
-                  onClick={() => setRequestModalOpen(true)}
+                <a
+                  href={coordinatorWaitlistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
                 >
-                  <Hand className="h-4 w-4" />
-                  {t("game.notify_available")}
-                </button>
+                  <MessageCircle className="h-4 w-4" />
+                  {t("game.join_waitlist")}
+                </a>
                 <p className="text-center text-2xs text-muted-foreground mt-2">
-                  {t("game.notify_help")}
+                  {t("game.waitlist_help")}
                 </p>
               </>
             )}
