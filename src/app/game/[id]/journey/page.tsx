@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Gift, Repeat, Star, MapPin, Clock, Heart } from "lucide-react";
 import { getGame, getUser } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 const NEIGHBORHOOD_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   "RBS Aleph": { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" },
@@ -92,8 +93,8 @@ function getMockJourney(gameTitle: string, ownerId: string): JourneyEntry[] {
   ];
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-IL", {
+function formatDate(dateStr: string, lang: string): string {
+  return new Date(dateStr).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -104,6 +105,7 @@ export default function GameJourneyPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
   const router = useRouter();
+  const { t, lang } = useLanguage();
   const game = getGame(id);
 
   if (!game) {
@@ -112,9 +114,9 @@ export default function GameJourneyPage() {
         <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
           <span className="text-2xl">🔍</span>
         </div>
-        <p className="text-sm font-medium mb-1">Game not found</p>
+        <p className="text-sm font-medium mb-1">{t("journey.not_found")}</p>
         <button onClick={() => router.push("/")} className="text-sm text-primary font-medium mt-2">
-          Back to games
+          {t("journey.back_to_games")}
         </button>
       </div>
     );
@@ -151,11 +153,11 @@ export default function GameJourneyPage() {
         >
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">📖</span>
-            <h1 className="text-xl font-bold tracking-tight">Game Passport</h1>
+            <h1 className="text-xl font-bold tracking-tight">{t("journey.page_title")}</h1>
           </div>
           <h2 className="text-lg font-semibold text-foreground mt-1">{game.title}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            The journey of this game through our community
+            {t("journey.page_subtitle")}
           </p>
         </motion.div>
 
@@ -168,15 +170,15 @@ export default function GameJourneyPage() {
         >
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white elevation-1 text-xs font-medium">
             <Repeat className="h-3 w-3 text-primary" />
-            <span>{game.handoffs} handoffs</span>
+            <span>{t("journey.handoffs", { count: game.handoffs })}</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white elevation-1 text-xs font-medium">
             <Heart className="h-3 w-3 text-coral" />
-            <span>{totalFamilies} families</span>
+            <span>{t("journey.families", { count: totalFamilies })}</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white elevation-1 text-xs font-medium">
             <Clock className="h-3 w-3 text-sunshine" />
-            <span>{totalWeeks}+ weeks of joy</span>
+            <span>{t("journey.weeks_of_joy", { count: totalWeeks })}</span>
           </div>
         </motion.div>
       </motion.div>
@@ -227,17 +229,17 @@ export default function GameJourneyPage() {
                       <div className="flex items-center gap-2">
                         {entry.type === "donated" && (
                           <span className="flex items-center gap-1 text-2xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            <Gift className="h-3 w-3" /> Donated
+                            <Gift className="h-3 w-3" /> {t("journey.badge_donated")}
                           </span>
                         )}
                         {entry.type === "borrowed" && (
                           <span className="flex items-center gap-1 text-2xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                            <Repeat className="h-3 w-3" /> Borrowed
+                            <Repeat className="h-3 w-3" /> {t("journey.badge_borrowed")}
                           </span>
                         )}
                         {entry.type === "current" && (
                           <span className="flex items-center gap-1 text-2xs font-semibold text-coral bg-coral/10 px-2 py-0.5 rounded-full">
-                            <MapPin className="h-3 w-3" /> Currently here
+                            <MapPin className="h-3 w-3" /> {t("journey.badge_current")}
                           </span>
                         )}
                         <span className={cn("text-2xs font-medium px-2 py-0.5 rounded-full", nhStyle.bg, nhStyle.text)}>
@@ -249,7 +251,7 @@ export default function GameJourneyPage() {
                     {/* Person name + date */}
                     <h3 className="font-semibold text-sm">{entry.personName}</h3>
                     <div className="flex items-center gap-3 mt-1 text-2xs text-muted-foreground">
-                      <span>{formatDate(entry.date)}</span>
+                      <span>{formatDate(entry.date, lang)}</span>
                       {entry.duration && (
                         <>
                           <span className="text-border">·</span>
@@ -291,15 +293,15 @@ export default function GameJourneyPage() {
           className="mt-8 text-center"
         >
           <div className="rounded-2xl bg-gradient-to-r from-primary/[0.06] to-coral/[0.06] p-5">
-            <p className="text-sm font-semibold mb-1">Want to be next on this journey?</p>
+            <p className="text-sm font-semibold mb-1">{t("journey.cta_title")}</p>
             <p className="text-xs text-muted-foreground mb-3">
-              Borrow this game and add your family&apos;s chapter to its story
+              {t("journey.cta_subtitle")}
             </p>
             <button
               onClick={() => router.push(`/game/${id}`)}
               className="px-6 py-2.5 rounded-full bg-primary text-white text-sm font-semibold elevation-2 hover:elevation-3 transition-all active:scale-[0.98]"
             >
-              Request this game
+              {t("journey.cta_button")}
             </button>
           </div>
         </motion.div>

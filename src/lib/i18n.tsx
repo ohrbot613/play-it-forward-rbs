@@ -270,6 +270,21 @@ const translations = {
 
   // Game card
   "game.see_journey": { en: "See journey →", he: "ראה מסע ←" },
+
+  // Game Journey / Passport page
+  "journey.page_title": { en: "Game Passport", he: "דרכון משחק" },
+  "journey.page_subtitle": { en: "The journey of this game through our community", he: "המסע של המשחק הזה דרך הקהילה שלנו" },
+  "journey.handoffs": { en: "{count} handoffs", he: "{count} העברות" },
+  "journey.families": { en: "{count} families", he: "{count} משפחות" },
+  "journey.weeks_of_joy": { en: "{count}+ weeks of joy", he: "{count}+ שבועות של שמחה" },
+  "journey.badge_donated": { en: "Donated", he: "תרום" },
+  "journey.badge_borrowed": { en: "Borrowed", he: "הושאל" },
+  "journey.badge_current": { en: "Currently here", he: "נמצא כאן כרגע" },
+  "journey.cta_title": { en: "Want to be next on this journey?", he: "רוצה להיות הבא במסע?" },
+  "journey.cta_subtitle": { en: "Borrow this game and add your family's chapter to its story", he: "שאל את המשחק והוסף את הפרק של משפחתך לסיפורו" },
+  "journey.cta_button": { en: "Request this game", he: "בקש את המשחק" },
+  "journey.not_found": { en: "Game not found", he: "משחק לא נמצא" },
+  "journey.back_to_games": { en: "Back to games", he: "חזרה למשחקים" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
