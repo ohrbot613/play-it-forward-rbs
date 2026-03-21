@@ -22,7 +22,8 @@ const fadeUp = {
 };
 
 export default function GameDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
   const router = useRouter();
   const game = getGame(id);
   const [requestModalOpen, setRequestModalOpen] = useState(false);

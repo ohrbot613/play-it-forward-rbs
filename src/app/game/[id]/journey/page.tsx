@@ -101,7 +101,8 @@ function formatDate(dateStr: string): string {
 }
 
 export default function GameJourneyPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
   const router = useRouter();
   const game = getGame(id);
 

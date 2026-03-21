@@ -26,7 +26,7 @@ function SignInContent() {
   const { t, lang } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const redirectTo = searchParams.get("redirect") ?? "/profile";
+  const redirectTo = searchParams?.get("redirect") ?? "/profile";
 
   useEffect(() => {
     const supabase = createClient();
@@ -44,7 +44,7 @@ function SignInContent() {
   }, [router, redirectTo]);
 
   useEffect(() => {
-    if (searchParams.get("error") === "auth") {
+    if (searchParams?.get("error") === "auth") {
       setAuthError(true);
     }
   }, [searchParams]);
