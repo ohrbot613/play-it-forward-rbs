@@ -10,6 +10,7 @@ import type { User } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { MOCK_GAMES } from "@/lib/data";
+import { fetchGameStats } from "@/lib/queries";
 
 export default function SignInPage() {
   return (
@@ -77,8 +78,14 @@ function SignInContent() {
     );
   }
 
-  const totalGames = MOCK_GAMES.length;
+  const [totalGames, setTotalGames] = useState(MOCK_GAMES.length);
   const totalFamilies = new Set(MOCK_GAMES.map((g) => g.ownerId)).size;
+
+  useEffect(() => {
+    fetchGameStats().then(({ totalGames: liveCount }) => {
+      if (liveCount > 0) setTotalGames(liveCount);
+    });
+  }, []);
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-between px-4 pt-12 pb-8">

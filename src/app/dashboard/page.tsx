@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_GAMES, getCategoryEmoji } from "@/lib/data";
+import { getCategoryEmoji } from "@/lib/data";
 import type { Game } from "@/lib/data";
 import {
   Inbox,
