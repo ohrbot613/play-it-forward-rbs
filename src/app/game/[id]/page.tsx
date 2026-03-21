@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getGame, getUser, getCategoryEmoji, getCategoryLabel, formatDistance, COMPLEXITY_LABELS, MOCK_VOLUNTEERS, RBS_CENTER } from "@/lib/data";
+import { getGame, getUser, getCategoryEmoji, getCategoryLabel, formatDistance, COMPLEXITY_LABELS, RBS_CENTER } from "@/lib/data";
 import type { Review } from "@/lib/data";
-import { bestRelayRoute } from "@/lib/relay";
+import { bestRelayRoute, type VolunteerCourier } from "@/lib/relay";
 import { Button } from "@/components/ui/button";
 import { RequestGameModal } from "@/components/request-game-modal";
 import { RelayRouteDisplay } from "@/components/relay-route-display";
 import { ArrowLeft, Users, MapPin, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
-import { fetchGameReviews, submitReview, insertLendingRequest } from "@/lib/queries";
+import { fetchGameReviews, submitReview, insertLendingRequest, fetchGameRelays } from "@/lib/queries";
 import { createClient } from "@/lib/supabase";
 
 const fadeUp = {
@@ -29,6 +29,9 @@ export default function GameDetailPage() {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [localRequestCount, setLocalRequestCount] = useState(0);
   const { t, lang } = useLanguage();
+
+  // ── Relay volunteers state ────────────────────────────────────────────
+  const [relayVolunteers, setRelayVolunteers] = useState<VolunteerCourier[]>([]);
 
   // ── Reviews state ────────────────────────────────────────────────────
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -55,8 +58,14 @@ export default function GameDetailPage() {
           if (!cancelled) setIsLoggedIn(!!user);
         }
 
-        const realReviews = await fetchGameReviews(id);
-        if (!cancelled) setReviews(realReviews);
+        const [realReviews, realRelays] = await Promise.all([
+          fetchGameReviews(id),
+          fetchGameRelays(id),
+        ]);
+        if (!cancelled) {
+          setReviews(realReviews);
+          setRelayVolunteers(realRelays);
+        }
       } catch (err) {
         console.error("[game-detail] reviews load error:", err);
       } finally {
@@ -154,7 +163,7 @@ export default function GameDetailPage() {
   const relayRoute = bestRelayRoute(
     { lat: game.currentHolder.lat, lng: game.currentHolder.lng },
     RBS_CENTER,
-    MOCK_VOLUNTEERS
+    relayVolunteers
   );
 
   return (

@@ -288,39 +288,9 @@ interface GameMatch {
 async function findAvailableGame(gameTitle: string): Promise<GameMatch | null> {
   const cfg = getSupabaseConfig();
 
-  // ── Mock fallback for dev / demo ──────────────────────────────────────────
-  if (!cfg) {
-    const MOCK_CATALOG: GameMatch[] = [
-      {
-        id: "mock-1",
-        title: "Catan",
-        lenderPhone: "+972501234567",
-        lenderMemberId: "mock-member-1",
-        lenderNeighborhood: "Bet",
-      },
-      {
-        id: "mock-2",
-        title: "Ticket to Ride",
-        lenderPhone: "+972502345678",
-        lenderMemberId: "mock-member-2",
-        lenderNeighborhood: "Gimmel",
-      },
-      {
-        id: "mock-3",
-        title: "Pandemic",
-        lenderPhone: "+972503456789",
-        lenderMemberId: "mock-member-3",
-        lenderNeighborhood: "Aleph",
-      },
-    ];
+  if (!cfg) return null;
 
-    const needle = gameTitle.toLowerCase();
-    return (
-      MOCK_CATALOG.find((g) => g.title.toLowerCase().includes(needle)) ?? null
-    );
-  }
-
-  // ── Live Supabase query ───────────────────────────────────────────────────
+  // ── Live Supabase query (ilike fuzzy match on title) ─────────────────────
   try {
     const encoded = encodeURIComponent(`%${gameTitle}%`);
     const url =

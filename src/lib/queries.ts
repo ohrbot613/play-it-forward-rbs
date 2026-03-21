@@ -830,6 +830,62 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
   return items.slice(0, limit);
 }
 
+// ─── Relay Volunteers ─────────────────────────────────────────────────────
+
+import type { VolunteerCourier } from "@/lib/relay";
+
+interface DbRelay {
+  id: string;
+  volunteer_id: string;
+  is_active: boolean;
+  volunteer: {
+    id: string;
+    name: string;
+    lat: number | null;
+    lng: number | null;
+  } | null;
+}
+
+/**
+ * Fetch active relay volunteers from the `relays` table joined with their
+ * member profile. Used to power the relay route display on the game detail page.
+ * Returns [] when Supabase is unconfigured or the table is missing.
+ *
+ * Note: `gameId` is accepted for API consistency and future per-game filtering,
+ * but currently returns all active volunteers for the neighbourhood network.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function fetchGameRelays(_gameId: string): Promise<VolunteerCourier[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("relays")
+    .select(`
+      id, volunteer_id, is_active,
+      volunteer:members!relays_volunteer_id_fkey (
+        id, name, lat, lng
+      )
+    `)
+    .eq("is_active", true);
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("[queries] fetchGameRelays error:", error.message);
+    }
+    return [];
+  }
+
+  return (data as DbRelay[])
+    .filter((r) => r.volunteer !== null && r.volunteer.lat !== null && r.volunteer.lng !== null)
+    .map((r) => ({
+      id: r.volunteer!.id,
+      name: r.volunteer!.name,
+      lat: r.volunteer!.lat as number,
+      lng: r.volunteer!.lng as number,
+    }));
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
