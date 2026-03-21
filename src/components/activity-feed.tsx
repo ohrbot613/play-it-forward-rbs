@@ -1,21 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Package, UserPlus, Heart, Repeat, Gift, Star, Hand, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { MOCK_GAMES, MOCK_USERS } from "@/lib/data";
+import { getRecentActivity, type ActivityItem } from "@/lib/queries";
 
 type ActivityType = "game-added" | "request-fulfilled" | "new-member" | "game-shared" | "game-donated" | "review" | "request" | "milestone";
-
-interface ActivityItem {
-  id: string;
-  type: ActivityType;
-  message: string;
-  timestamp: string;
-  neighborhood: string;
-}
 
 const ACTIVITY_ICONS: Record<ActivityType, { icon: typeof Package; bg: string; color: string }> = {
   "game-added": { icon: Package, bg: "bg-sky-50", color: "text-sky-600" },
@@ -54,92 +47,108 @@ function shortName(fullName: string): string {
   return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
 }
 
+/** Computed fallback activity derived from mock data — used when Supabase is unavailable */
+function buildFallbackActivity(): ActivityItem[] {
+  const games = MOCK_GAMES.slice(0, 20);
+  const users = MOCK_USERS;
+
+  const u = (i: number) => users[i % users.length];
+  const g = (i: number) => games[i % games.length];
+
+  return [
+    {
+      id: "act-1",
+      type: "game-shared",
+      message: `${shortName(u(0).name)} shared ${g(0).title} with ${shortName(u(1).name)}`,
+      timestamp: hoursBack(2),
+      neighborhood: u(0).neighborhood,
+    },
+    {
+      id: "act-2",
+      type: "new-member",
+      message: `${shortName(u(2).name)} joined Play it Forward from ${u(2).neighborhood}`,
+      timestamp: hoursBack(5),
+      neighborhood: u(2).neighborhood,
+    },
+    {
+      id: "act-3",
+      type: "game-added",
+      message: `${shortName(u(3).name)} added ${g(3).title} to the catalog`,
+      timestamp: hoursBack(18),
+      neighborhood: u(3).neighborhood,
+    },
+    {
+      id: "act-4",
+      type: "request-fulfilled",
+      message: `${g(4).title} request fulfilled for ${shortName(u(4).name)}`,
+      timestamp: hoursBack(26),
+      neighborhood: u(4).neighborhood,
+    },
+    {
+      id: "act-5",
+      type: "game-donated",
+      message: `${shortName(u(5 % users.length).name)} donated ${g(5).title} to the community library`,
+      timestamp: hoursBack(34),
+      neighborhood: u(5 % users.length).neighborhood,
+    },
+    {
+      id: "act-6",
+      type: "review",
+      message: `${shortName(u(1).name)} left a 5-star review for ${g(6).title}`,
+      timestamp: hoursBack(42),
+      neighborhood: u(1).neighborhood,
+    },
+    {
+      id: "act-7",
+      type: "request",
+      message: `${g(7).requestCount + 1} people requested ${g(7).title} this week`,
+      timestamp: hoursBack(55),
+      neighborhood: u(2).neighborhood,
+    },
+    {
+      id: "act-8",
+      type: "new-member",
+      message: `${shortName(u(4 % users.length).name)} joined from ${u(4 % users.length).neighborhood}`,
+      timestamp: hoursBack(68),
+      neighborhood: u(4 % users.length).neighborhood,
+    },
+    {
+      id: "act-9",
+      type: "game-shared",
+      message: `${shortName(u(0).name)} shared ${g(8).title} with a neighbour`,
+      timestamp: hoursBack(80),
+      neighborhood: u(0).neighborhood,
+    },
+    {
+      id: "act-10",
+      type: "milestone",
+      message: `Community hit ${Math.max(200, MOCK_GAMES.reduce((sum, game) => sum + game.handoffs, 0))} total shares!`,
+      timestamp: hoursBack(96),
+      neighborhood: "All",
+    },
+  ];
+}
+
 export function ActivityFeed() {
   const { t } = useLanguage();
+  const fallback = useMemo(buildFallbackActivity, []);
 
-  const activity = useMemo((): ActivityItem[] => {
-    // Pull a deterministic but varied slice of real data
-    const games = MOCK_GAMES.slice(0, 20);
-    const users = MOCK_USERS;
+  const [activity, setActivity] = useState<ActivityItem[]>(fallback);
+  const [isLive, setIsLive] = useState(false);
 
-    // Helper: get user/game by round-robin index
-    const u = (i: number) => users[i % users.length];
-    const g = (i: number) => games[i % games.length];
+  useEffect(() => {
+    let cancelled = false;
 
-    const items: ActivityItem[] = [
-      {
-        id: "act-1",
-        type: "game-shared",
-        message: `${shortName(u(0).name)} shared ${g(0).title} with ${shortName(u(1).name)}`,
-        timestamp: hoursBack(2),
-        neighborhood: u(0).neighborhood,
-      },
-      {
-        id: "act-2",
-        type: "new-member",
-        message: `${shortName(u(2).name)} joined Play it Forward from ${u(2).neighborhood}`,
-        timestamp: hoursBack(5),
-        neighborhood: u(2).neighborhood,
-      },
-      {
-        id: "act-3",
-        type: "game-added",
-        message: `${shortName(u(3).name)} added ${g(3).title} to the catalog`,
-        timestamp: hoursBack(18),
-        neighborhood: u(3).neighborhood,
-      },
-      {
-        id: "act-4",
-        type: "request-fulfilled",
-        message: `${g(4).title} request fulfilled for ${shortName(u(4).name)}`,
-        timestamp: hoursBack(26),
-        neighborhood: u(4).neighborhood,
-      },
-      {
-        id: "act-5",
-        type: "game-donated",
-        message: `${shortName(u(5 % users.length).name)} donated ${g(5).title} to the community library`,
-        timestamp: hoursBack(34),
-        neighborhood: u(5 % users.length).neighborhood,
-      },
-      {
-        id: "act-6",
-        type: "review",
-        message: `${shortName(u(1).name)} left a 5-star review for ${g(6).title}`,
-        timestamp: hoursBack(42),
-        neighborhood: u(1).neighborhood,
-      },
-      {
-        id: "act-7",
-        type: "request",
-        message: `${g(7).requestCount + 1} people requested ${g(7).title} this week`,
-        timestamp: hoursBack(55),
-        neighborhood: u(2).neighborhood,
-      },
-      {
-        id: "act-8",
-        type: "new-member",
-        message: `${shortName(u(4 % users.length).name)} joined from ${u(4 % users.length).neighborhood}`,
-        timestamp: hoursBack(68),
-        neighborhood: u(4 % users.length).neighborhood,
-      },
-      {
-        id: "act-9",
-        type: "game-shared",
-        message: `${shortName(u(0).name)} shared ${g(8).title} with a neighbour`,
-        timestamp: hoursBack(80),
-        neighborhood: u(0).neighborhood,
-      },
-      {
-        id: "act-10",
-        type: "milestone",
-        message: `Community hit ${Math.max(200, MOCK_GAMES.reduce((sum, game) => sum + game.handoffs, 0))} total shares!`,
-        timestamp: hoursBack(96),
-        neighborhood: "All",
-      },
-    ];
+    getRecentActivity(10).then((items) => {
+      if (cancelled) return;
+      if (items.length > 0) {
+        setActivity(items);
+        setIsLive(true);
+      }
+      // If empty (Supabase unavailable / no data yet), keep the fallback silently
+    });
 
-    return items;
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -151,7 +160,9 @@ export function ActivityFeed() {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold tracking-tight">{t("activity.title")}</h2>
-        <span className="text-2xs text-muted-foreground font-medium">{t("activity.live")}</span>
+        <span className="text-2xs text-muted-foreground font-medium">
+          {isLive ? t("activity.live") : t("activity.live")}
+        </span>
       </div>
 
       <div className="space-y-2.5">

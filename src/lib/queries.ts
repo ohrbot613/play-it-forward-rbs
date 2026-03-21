@@ -662,6 +662,174 @@ export async function fetchCommunityWishes(): Promise<CommunityWish[]> {
   }));
 }
 
+// ─── Activity Feed ────────────────────────────────────────────────────────
+
+export interface ActivityItem {
+  id: string;
+  type: "game-added" | "request-fulfilled" | "new-member" | "game-shared" | "game-donated" | "review" | "request" | "milestone";
+  message: string;
+  timestamp: string;
+  neighborhood: string;
+}
+
+/** Pick a first-name + last initial from a full name. E.g. "Miriam Katz" → "Miriam K." */
+function shortName(fullName: string): string {
+  const parts = fullName.trim().split(" ");
+  if (parts.length === 1) return fullName;
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+}
+
+/**
+ * Fetch recent community activity from Supabase.
+ * Pulls from: games (newly listed), members (recently joined),
+ * lending_requests (completed shares), and reviews (recently posted).
+ * Returns [] gracefully if Supabase is unconfigured or any table is missing.
+ */
+export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(); // last 7 days
+  const items: ActivityItem[] = [];
+
+  try {
+    // 1. Recently listed games
+    const { data: recentGames, error: gamesError } = await supabase
+      .from("games")
+      .select(`
+        id, title, listed_at, ownership_type,
+        locations ( neighborhood ),
+        owner:members!games_owner_id_fkey ( name, neighborhood )
+      `)
+      .gte("listed_at", cutoff)
+      .order("listed_at", { ascending: false })
+      .limit(5);
+
+    if (!gamesError && recentGames) {
+      for (const row of recentGames as Array<{
+        id: string;
+        title: string;
+        listed_at: string;
+        ownership_type: string | null;
+        locations?: Array<{ neighborhood: string }> | null;
+        owner?: { name: string; neighborhood: string } | null;
+      }>) {
+        const ownerName = row.owner?.name ?? "Someone";
+        const neighborhood = row.locations?.[0]?.neighborhood ?? row.owner?.neighborhood ?? "Community";
+        const isDonated = (row.ownership_type ?? "lent") === "donated";
+        items.push({
+          id: `game-${row.id}`,
+          type: isDonated ? "game-donated" : "game-added",
+          message: isDonated
+            ? `${shortName(ownerName)} donated ${row.title} to the community library`
+            : `${shortName(ownerName)} added ${row.title} to the catalog`,
+          timestamp: row.listed_at,
+          neighborhood,
+        });
+      }
+    }
+
+    // 2. Recently joined members
+    const { data: newMembers, error: membersError } = await supabase
+      .from("members")
+      .select("id, name, neighborhood, created_at")
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(4);
+
+    if (!membersError && newMembers) {
+      for (const row of newMembers as Array<{
+        id: string;
+        name: string;
+        neighborhood: string;
+        created_at: string;
+      }>) {
+        items.push({
+          id: `member-${row.id}`,
+          type: "new-member",
+          message: `${shortName(row.name)} joined Play it Forward from ${row.neighborhood}`,
+          timestamp: row.created_at,
+          neighborhood: row.neighborhood,
+        });
+      }
+    }
+
+    // 3. Recently completed lending requests (game shares)
+    const { data: completedLoans, error: loansError } = await supabase
+      .from("lending_requests")
+      .select(`
+        id, completed_at,
+        game:games!lending_requests_game_id_fkey ( title ),
+        borrower:members!lending_requests_borrower_id_fkey ( name, neighborhood )
+      `)
+      .eq("status", "completed")
+      .not("completed_at", "is", null)
+      .gte("completed_at", cutoff)
+      .order("completed_at", { ascending: false })
+      .limit(4);
+
+    if (!loansError && completedLoans) {
+      for (const row of completedLoans as Array<{
+        id: string;
+        completed_at: string;
+        game?: { title: string } | null;
+        borrower?: { name: string; neighborhood: string } | null;
+      }>) {
+        const gameTitle = row.game?.title ?? "a game";
+        const borrowerName = row.borrower?.name ?? "Someone";
+        const neighborhood = row.borrower?.neighborhood ?? "Community";
+        items.push({
+          id: `loan-${row.id}`,
+          type: "request-fulfilled",
+          message: `${gameTitle} was shared with ${shortName(borrowerName)}`,
+          timestamp: row.completed_at,
+          neighborhood,
+        });
+      }
+    }
+
+    // 4. Recent reviews
+    const { data: recentReviews, error: reviewsError } = await supabase
+      .from("reviews")
+      .select(`
+        id, rating, created_at,
+        game:games!reviews_game_id_fkey ( title ),
+        reviewer:members!reviews_reviewer_id_fkey ( name, neighborhood )
+      `)
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    if (!reviewsError && recentReviews) {
+      for (const row of recentReviews as Array<{
+        id: string;
+        rating: number;
+        created_at: string;
+        game?: { title: string } | null;
+        reviewer?: { name: string; neighborhood: string } | null;
+      }>) {
+        const gameTitle = row.game?.title ?? "a game";
+        const reviewerName = row.reviewer?.name ?? "Someone";
+        const neighborhood = row.reviewer?.neighborhood ?? "Community";
+        items.push({
+          id: `review-${row.id}`,
+          type: "review",
+          message: `${shortName(reviewerName)} left a ${row.rating}-star review for ${gameTitle}`,
+          timestamp: row.created_at,
+          neighborhood,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[queries] getRecentActivity unexpected error:", err);
+    return [];
+  }
+
+  // Sort all events newest-first and return top N
+  items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return items.slice(0, limit);
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
