@@ -12,7 +12,7 @@ interface RequestGameModalProps {
   gameTitle: string;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, message: string) => void;
+  onSubmit: (name: string, message: string) => void | Promise<void>;
 }
 
 export function RequestGameModal({ gameTitle, isOpen, onClose, onSubmit }: RequestGameModalProps) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -16,6 +16,7 @@ import {
   type GameCategory,
   type CommunityWish,
 } from "@/lib/data";
+import { fetchCommunityWishes } from "@/lib/queries";
 import {
   Search,
   X,
@@ -491,7 +492,20 @@ export default function RequestsPage() {
   >("open");
   const [addWishOpen, setAddWishOpen] = useState(false);
   const [localWishes, setLocalWishes] = useState<CommunityWish[]>([]);
+  // Wishes loaded from Supabase; falls back to MOCK_WISHES if query fails
+  const [dbWishes, setDbWishes] = useState<CommunityWish[]>(MOCK_WISHES);
   const { t, lang } = useLanguage();
+
+  useEffect(() => {
+    fetchCommunityWishes()
+      .then((rows) => {
+        // Only replace mock data if we actually got rows back
+        if (rows.length > 0) setDbWishes(rows);
+      })
+      .catch(() => {
+        // Leave MOCK_WISHES in place on network/DB error
+      });
+  }, []);
 
   const STATUS_TABS: { value: "open" | "matched" | "fulfilled"; labelKey: "wishes.open" | "wishes.matched" | "wishes.fulfilled" }[] = [
     { value: "open", labelKey: "wishes.open" },
@@ -521,7 +535,7 @@ export default function RequestsPage() {
     setStatusFilter("open");
   }
 
-  const allWishes = useMemo(() => [...localWishes, ...MOCK_WISHES], [localWishes]);
+  const allWishes = useMemo(() => [...localWishes, ...dbWishes], [localWishes, dbWishes]);
 
   const wishes = useMemo(() => {
     let filtered = allWishes.filter((w) => w.status === statusFilter);

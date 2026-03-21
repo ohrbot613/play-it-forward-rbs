@@ -13,7 +13,7 @@ import { RelayRouteDisplay } from "@/components/relay-route-display";
 import { ArrowLeft, Users, MapPin, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
-import { fetchGameReviews, submitReview } from "@/lib/queries";
+import { fetchGameReviews, submitReview, insertLendingRequest } from "@/lib/queries";
 import { createClient } from "@/lib/supabase";
 
 const fadeUp = {
@@ -522,7 +522,21 @@ export default function GameDetailPage() {
             gameTitle={game.title}
             isOpen={requestModalOpen}
             onClose={() => setRequestModalOpen(false)}
-            onSubmit={() => setLocalRequestCount((c) => c + 1)}
+            onSubmit={async (_name: string, message: string) => {
+              setLocalRequestCount((c) => c + 1);
+              // Record the request in Supabase if user is logged in
+              try {
+                const supabase = createClient();
+                if (supabase?.auth) {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (user) {
+                    await insertLendingRequest(game.id, user.id, message);
+                  }
+                }
+              } catch {
+                // Non-fatal — optimistic count already updated
+              }
+            }}
           />
         </motion.div>
       </div>

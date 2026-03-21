@@ -7,7 +7,7 @@
  */
 
 import { createClient } from "@/lib/supabase";
-import type { Game, UserProfile, Review, GameCategory, GameCondition, AgeGroup, Complexity, OwnershipType } from "@/lib/data";
+import type { Game, UserProfile, Review, GameCategory, GameCondition, AgeGroup, Complexity, OwnershipType, CommunityWish, WishUrgency } from "@/lib/data";
 
 // ─── DB row types ─────────────────────────────────────────────────────────
 
@@ -437,6 +437,54 @@ export async function fetchLendHistory(memberId: string): Promise<LendingRequest
   return (data as DbLendingRequest[]).map(mapLendingRequest);
 }
 
+// ─── Insert Lending Request ───────────────────────────────────────────────
+
+export interface InsertLendingRequestResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Insert a new lending request into the `lending_requests` table.
+ * Requires game_id and requester_id. lender_id is set to game owner if
+ * available, otherwise an empty placeholder.
+ */
+export async function insertLendingRequest(
+  gameId: string,
+  requesterId: string,
+  message: string
+): Promise<InsertLendingRequestResult> {
+  const supabase = createClient();
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  // Look up the game owner to set as lender
+  const { data: gameRow } = await supabase
+    .from("games")
+    .select("owner_id")
+    .eq("id", gameId)
+    .single();
+
+  const lenderId = (gameRow as { owner_id: string | null } | null)?.owner_id ?? requesterId;
+
+  const { error } = await supabase.from("lending_requests").insert({
+    game_id: gameId,
+    borrower_id: requesterId,
+    lender_id: lenderId,
+    status: "pending",
+    message: message.trim() || null,
+    created_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("[queries] insertLendingRequest error:", error.message);
+    }
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
 // ─── Community Wishes ─────────────────────────────────────────────────────
 
 /*
@@ -558,6 +606,60 @@ export async function submitReview(
   }
 
   return { success: true };
+}
+
+// ─── Fetch Community Wishes ───────────────────────────────────────────────
+
+interface DbCommunityWish {
+  id: string;
+  title: string;
+  description: string;
+  neighborhood: string;
+  requester_id: string | null;
+  status: string;
+  urgency: string;
+  category: string | null;
+  age_range: string | null;
+  responses: number;
+  created_at: string;
+}
+
+/**
+ * Fetch all community wishes from the `community_wishes` table.
+ * Returns an empty array (so the caller can fall back to mock data) if
+ * Supabase is unconfigured or the table doesn't exist yet.
+ */
+export async function fetchCommunityWishes(): Promise<CommunityWish[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("community_wishes")
+    .select("id, title, description, neighborhood, requester_id, status, urgency, category, age_range, responses, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("[queries] fetchCommunityWishes error:", error.message);
+    }
+    return [];
+  }
+
+  return (data as DbCommunityWish[]).map((row) => ({
+    id: row.id,
+    requesterId: row.requester_id ?? "anonymous",
+    requesterName: "Community Member",
+    requesterAvatar: `https://api.dicebear.com/7.x/thumbs/svg?seed=${row.id}`,
+    neighborhood: row.neighborhood,
+    title: row.title,
+    description: row.description,
+    category: (row.category as GameCategory) ?? "board-games",
+    ageRange: row.age_range ?? "All",
+    urgency: (row.urgency as WishUrgency) ?? "normal",
+    status: (row.status as CommunityWish["status"]) ?? "open",
+    createdAt: row.created_at,
+    responses: row.responses ?? 0,
+  }));
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────

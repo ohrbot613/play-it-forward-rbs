@@ -28,7 +28,14 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <Link href={`/game/${game.id}`}>
+      {/* Outer div replaces Link so nested journey Link is valid HTML */}
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={() => { window.location.href = `/game/${game.id}`; }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") window.location.href = `/game/${game.id}`; }}
+        className="cursor-pointer"
+      >
         <Card className="group overflow-hidden border-0 elevation-2 hover:elevation-4 bg-white transition-shadow duration-300">
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
             {/* Image */}
@@ -120,7 +127,7 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
             </CardContent>
           </motion.div>
         </Card>
-      </Link>
+      </div>
     </motion.div>
   );
 }

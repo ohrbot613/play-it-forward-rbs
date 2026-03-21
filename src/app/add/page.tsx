@@ -90,6 +90,7 @@ export default function AddGamePage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [aiFilled, setAiFilled] = useState(false);
   const [aiToast, setAiToast] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [gameType, setGameType] = useState<GameType | "">("");
   const [ageRange, setAgeRange] = useState<AgeRange | "">("");
   const { t, lang } = useLanguage();
@@ -258,60 +259,67 @@ export default function AddGamePage() {
 
   const handleSubmit = async () => {
     setStep("submitting");
+    setSubmitError(null);
 
     try {
       const supabase = createClient();
 
-      // Only attempt insert if Supabase is configured and user is logged in
-      if (supabase?.auth && user) {
-        const categoryMap: Record<string, string> = {
-          "board-games": "board_game",
-          "outdoor-toys": "outdoor",
-          "lego-building": "lego",
-          magnets: "toy",
-          playmobil: "toy",
-          puzzles: "puzzle",
-          other: "toy",
-        };
-
-        const conditionMap: Record<string, string> = {
-          "like-new": "new",
-          good: "good",
-          fair: "fair",
-        };
-
-        // Upload photos to Supabase Storage, fall back gracefully if bucket missing
-        const photoUrls = photos.length > 0
-          ? await uploadPhotosToStorage(photos, user.id)
-          : [];
-
-        const { error } = await supabase.from("games").insert({
-          title,
-          description: description || null,
-          category: categoryMap[category] || "toy",
-          condition: conditionMap[condition as string] || "good",
-          age_range_min: ageGroups.length > 0 ? 0 : null,
-          age_range_max: ageGroups.length > 0 ? 18 : null,
-          player_count_min: parseInt(minPlayers) || 1,
-          player_count_max: parseInt(maxPlayers) || 4,
-          owner_id: user.id,
-          is_available: true,
-          photos: photoUrls.length > 0 ? photoUrls : null,
-          game_type: gameType || null,
-          age_range: ageRange || null,
-        });
-
-        if (error) {
-          console.warn("Supabase insert failed (showing success anyway):", error.message);
-        }
+      // If Supabase is not configured, show success anyway (dev/demo mode)
+      if (!supabase?.auth || !user) {
+        setStep("done");
+        return;
       }
-    } catch (err) {
-      // Graceful fallback — don't crash, just log
-      console.warn("Could not save to database:", err);
-    }
 
-    // Always show success — the game will be in mock data for now
-    setStep("done");
+      const categoryMap: Record<string, string> = {
+        "board-games": "board_game",
+        "outdoor-toys": "outdoor",
+        "lego-building": "lego",
+        magnets: "toy",
+        playmobil: "toy",
+        puzzles: "puzzle",
+        other: "toy",
+      };
+
+      const conditionMap: Record<string, string> = {
+        "like-new": "new",
+        good: "good",
+        fair: "fair",
+      };
+
+      // Upload photos to Supabase Storage, fall back gracefully if bucket missing
+      const photoUrls = photos.length > 0
+        ? await uploadPhotosToStorage(photos, user.id)
+        : [];
+
+      const { error } = await supabase.from("games").insert({
+        title,
+        description: description || null,
+        category: categoryMap[category] || "toy",
+        condition: conditionMap[condition as string] || "good",
+        age_range_min: ageGroups.length > 0 ? 0 : null,
+        age_range_max: ageGroups.length > 0 ? 18 : null,
+        player_count_min: parseInt(minPlayers) || 1,
+        player_count_max: parseInt(maxPlayers) || 4,
+        owner_id: user.id,
+        is_available: true,
+        photos: photoUrls.length > 0 ? photoUrls : null,
+        game_type: gameType || null,
+        age_range: ageRange || null,
+      });
+
+      if (error) {
+        console.error("Supabase insert failed:", error.message);
+        setSubmitError(lang === "he" ? "שגיאה בשמירת המשחק. נסה שוב." : "Failed to save game. Please try again.");
+        setStep("photos");
+        return;
+      }
+
+      setStep("done");
+    } catch (err) {
+      console.error("Could not save to database:", err);
+      setSubmitError(lang === "he" ? "שגיאה בשמירת המשחק. נסה שוב." : "Failed to save game. Please try again.");
+      setStep("photos");
+    }
   };
 
   // Not signed in — show prompt
@@ -462,6 +470,20 @@ export default function AddGamePage() {
             />
           </label>
         </div>
+
+        {/* Submit error */}
+        <AnimatePresence>
+          {submitError && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="mb-4 px-4 py-2.5 rounded-2xl bg-red-50 text-xs text-red-600 text-center"
+            >
+              {submitError}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* AI toast */}
         <AnimatePresence>
