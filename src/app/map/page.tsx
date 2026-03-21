@@ -7,7 +7,7 @@ import Image from "next/image";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
-  MOCK_GAMES,
+
   CATEGORIES,
   getCategoryEmoji,
   getCategoryLabel,
@@ -146,14 +146,12 @@ export default function MapPage() {
   //
   // To switch: change the two useState/useRef defaults from MOCK_GAMES to []
   // and drop the `if (liveGames.length > 0)` guard below.
-  const [allGames, setAllGames] = useState<Game[]>(MOCK_GAMES);
-  const allGamesRef = useRef<Game[]>(MOCK_GAMES);
+  const [allGames, setAllGames] = useState<Game[]>([]);
+  const allGamesRef = useRef<Game[]>([]);
   useEffect(() => {
     fetchGames().then((liveGames) => {
-      if (liveGames.length > 0) {
-        setAllGames(liveGames);
-        allGamesRef.current = liveGames;
-      }
+      setAllGames(liveGames);
+      allGamesRef.current = liveGames;
     });
   }, []);
 
