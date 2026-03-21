@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_GAMES, MOCK_USERS, getCategoryEmoji } from "@/lib/data";
+import { MOCK_GAMES, getCategoryEmoji } from "@/lib/data";
 import type { Game } from "@/lib/data";
 import {
   Inbox,
@@ -17,10 +17,12 @@ import {
   User,
   Star,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase";
+import { fetchCurrentMember, fetchMemberGames } from "@/lib/queries";
 
 interface Toast {
   id: string;
@@ -43,9 +45,7 @@ function useToast() {
   return { toasts, addToast };
 }
 
-// ── Mock dashboard state ──────────────────────────────────────────────
-// Current user is Miriam Katz (u1) — she owns games 1, 10, 19, 28, 37, 46
-const CURRENT_USER_ID = "u1";
+// ── Types ─────────────────────────────────────────────────────────────
 
 interface LoanRequest {
   id: string;
@@ -67,56 +67,18 @@ interface ActiveLoan {
   returned: boolean;
 }
 
-const INITIAL_REQUESTS: LoanRequest[] = [
-  {
-    id: "req1",
-    gameId: "1",
-    gameTitle: "Settlers of Catan",
-    requesterName: "Yosef Levi",
-    requesterAvatar: "https://i.pravatar.cc/150?u=yosef",
-    requestedAt: "2026-03-17",
-    status: "pending",
-  },
-  {
-    id: "req2",
-    gameId: "1",
-    gameTitle: "Settlers of Catan",
-    requesterName: "Chana Perl",
-    requesterAvatar: "https://i.pravatar.cc/150?u=chana",
-    requestedAt: "2026-03-16",
-    status: "pending",
-  },
-  {
-    id: "req3",
-    gameId: "10",
-    gameTitle: "Azul",
-    requesterName: "Devorah Rosenberg",
-    requesterAvatar: "https://i.pravatar.cc/150?u=devorah",
-    requestedAt: "2026-03-15",
-    status: "pending",
-  },
-];
-
-const INITIAL_LOANS: ActiveLoan[] = [
-  {
-    id: "loan1",
-    gameId: "19",
-    gameTitle: "LEGO City Police Station",
-    borrowerName: "Avi Mizrachi",
-    borrowerAvatar: "https://i.pravatar.cc/150?u=avi",
-    lentAt: "2026-03-10",
-    returned: false,
-  },
-  {
-    id: "loan2",
-    gameId: "28",
-    gameTitle: "Magna-Tiles 100pc Set",
-    borrowerName: "Rivka Stern",
-    borrowerAvatar: "https://i.pravatar.cc/150?u=rivka",
-    lentAt: "2026-03-12",
-    returned: false,
-  },
-];
+// ── DB row type for lending_offers ────────────────────────────────────
+interface DbLendingOffer {
+  id: string;
+  game_id: string;
+  lender_user_id: string;
+  borrower_user_id: string;
+  status: string;
+  created_at: string;
+  game?: { title: string; photos: string[] | null; image_url: string | null } | null;
+  borrower?: { name: string; avatar_url: string | null } | null;
+  lender?: { name: string } | null;
+}
 
 type Tab = "requests" | "loans" | "games";
 
@@ -131,12 +93,115 @@ function daysAgo(dateStr: string, t: ReturnType<typeof useLanguage>["t"]): strin
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>("requests");
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
-  const [loans, setLoans] = useState(INITIAL_LOANS);
+  const [requests, setRequests] = useState<LoanRequest[]>([]);
+  const [loans, setLoans] = useState<ActiveLoan[]>([]);
+  const [myGames, setMyGames] = useState<Game[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [currentMemberId, setCurrentMemberId] = useState<string | null>(null);
   const { t, lang } = useLanguage();
   const { toasts, addToast } = useToast();
 
-  const myGames = MOCK_GAMES.filter((g) => g.ownerId === CURRENT_USER_ID);
+  // ── Fetch real data from lending_offers on mount ─────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      setDataLoading(true);
+      try {
+        const supabase = createClient();
+
+        // If Supabase is not configured, fall back to empty state (no mock data)
+        if (!supabase) {
+          setDataLoading(false);
+          return;
+        }
+
+        // Get current authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          // Not logged in — no data to show
+          if (!cancelled) setDataLoading(false);
+          return;
+        }
+
+        // Get the member profile to get the members table ID (different from auth UUID)
+        const member = await fetchCurrentMember();
+        if (!cancelled && member) {
+          setCurrentMemberId(member.id);
+        }
+
+        // Fetch lending_offers where user is lender OR borrower, status pending/active/completed
+        const { data: offersRaw, error: offersError } = await supabase
+          .from("lending_offers")
+          .select(`
+            id, game_id, lender_user_id, borrower_user_id, status, created_at,
+            game:games!lending_offers_game_id_fkey (title, photos, image_url),
+            borrower:members!lending_offers_borrower_user_id_fkey (name, avatar_url),
+            lender:members!lending_offers_lender_user_id_fkey (name)
+          `)
+          .or(`lender_user_id.eq.${user.id},borrower_user_id.eq.${user.id}`)
+          .in("status", ["pending", "active", "completed"])
+          .order("created_at", { ascending: false });
+
+        if (offersError) {
+          // Table may not exist yet — fail silently
+          if (offersError.code !== "42P01") {
+            console.error("[dashboard] lending_offers fetch error:", offersError.message);
+          }
+        } else if (offersRaw && !cancelled) {
+          const offers = offersRaw as DbLendingOffer[];
+
+          // Split into requests (pending, user is lender) and active loans (active, user is lender)
+          const incomingRequests: LoanRequest[] = offers
+            .filter((o) => o.status === "pending" && o.lender_user_id === user.id)
+            .map((o) => ({
+              id: o.id,
+              gameId: o.game_id,
+              gameTitle: o.game?.title ?? "Unknown game",
+              requesterName: o.borrower?.name ?? "Someone",
+              requesterAvatar: o.borrower?.avatar_url
+                ? o.borrower.avatar_url
+                : `https://i.pravatar.cc/150?u=${o.borrower_user_id}`,
+              requestedAt: o.created_at.split("T")[0],
+              status: "pending" as const,
+            }));
+
+          const activeLoans: ActiveLoan[] = offers
+            .filter((o) => o.status === "active" && o.lender_user_id === user.id)
+            .map((o) => ({
+              id: o.id,
+              gameId: o.game_id,
+              gameTitle: o.game?.title ?? "Unknown game",
+              borrowerName: o.borrower?.name ?? "Someone",
+              borrowerAvatar: o.borrower?.avatar_url
+                ? o.borrower.avatar_url
+                : `https://i.pravatar.cc/150?u=${o.borrower_user_id}`,
+              lentAt: o.created_at.split("T")[0],
+              returned: false,
+            }));
+
+          setRequests(incomingRequests);
+          setLoans(activeLoans);
+        }
+
+        // Fetch my games using the queries helper (needs members table ID)
+        const memberForGames = await fetchCurrentMember();
+        if (memberForGames && !cancelled) {
+          const games = await fetchMemberGames(memberForGames.id);
+          if (!cancelled) setMyGames(games);
+        }
+      } catch (err) {
+        console.error("[dashboard] load error:", err);
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
+    }
+
+    loadDashboard();
+    return () => { cancelled = true; };
+  }, []);
+
   const pendingCount = requests.filter((r) => r.status === "pending").length;
   const activeLoansCount = loans.filter((l) => !l.returned).length;
 
@@ -156,13 +221,16 @@ export default function DashboardPage() {
     );
     addToast(t("dash.toast_accepted"), "success");
 
-    // Persist to Supabase (fire-and-forget; UI already updated)
+    // Persist to Supabase — set status to 'active' (accepted = now an active loan)
     const supabase = createClient();
     if (supabase) {
-      void supabase
+      const { error } = await supabase
         .from("lending_offers")
-        .update({ status: "accepted" })
+        .update({ status: "active" })
         .eq("id", id);
+      if (error) {
+        console.error("[dashboard] accept offer error:", error.message);
+      }
     }
 
     // Open WhatsApp deep-link to coordinator confirming acceptance
@@ -181,13 +249,16 @@ export default function DashboardPage() {
     );
     addToast(t("dash.toast_declined"), "neutral");
 
-    // Persist to Supabase (fire-and-forget; UI already updated)
+    // Persist to Supabase — set status to 'declined'
     const supabase = createClient();
     if (supabase) {
-      void supabase
+      const { error } = await supabase
         .from("lending_offers")
         .update({ status: "declined" })
         .eq("id", id);
+      if (error) {
+        console.error("[dashboard] decline offer error:", error.message);
+      }
     }
   }
 
@@ -198,12 +269,17 @@ export default function DashboardPage() {
     addToast(t("dash.toast_returned"), "success");
   }
 
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4">
-      {/* Demo Mode Banner */}
-      <div className="mx-[-1rem] mb-0 px-4 py-2.5 bg-amber-400 text-amber-900 text-xs font-semibold text-center tracking-wide">
-        {t("dash.demo_banner")}
-      </div>
+      {/* Demo Mode Banner — only shown when Supabase is not configured */}
 
       {/* Header */}
       <motion.div

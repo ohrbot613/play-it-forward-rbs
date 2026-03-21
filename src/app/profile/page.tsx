@@ -38,6 +38,9 @@ import {
   LogOut,
   Loader2,
   LogIn,
+  Share2,
+  Copy,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -64,6 +67,9 @@ export default function ProfilePage() {
   const [kidAges, setKidAges] = useState<number[]>([]);
   const [newAge, setNewAge] = useState("");
   const [showPrefs, setShowPrefs] = useState(false);
+
+  // Share / referral state
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Real Supabase data
   const [dbMember, setDbMember] = useState<UserProfile | null>(null);
@@ -180,6 +186,29 @@ export default function ProfilePage() {
     setKidAges((prev) => prev.filter((a) => a !== age));
   };
 
+  const handleCopyReferralLink = async () => {
+    const code = demoMode
+      ? (demoProfile?.referralCode ?? "PIF-DEMO")
+      : (dbMember?.referralCode ?? "");
+    if (!code) return;
+    const link = `https://play-it-forward.vercel.app/join?ref=${code}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2500);
+    } catch {
+      // Fallback for browsers without clipboard API
+      const el = document.createElement("textarea");
+      el.value = link;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2500);
+    }
+  };
+
   const demoProfile = MOCK_USERS.find((u) => u.id === DEMO_USER_ID);
 
   const recommendations = useMemo(() => {
@@ -294,6 +323,46 @@ export default function ProfilePage() {
           <Shield className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
           <div className="text-2xl font-bold">{trustScore}</div>
           <div className="text-2xs text-muted-foreground mt-0.5">{t("profile.trust")}</div>
+        </div>
+      </motion.div>
+
+      {/* Share PIF — Referral Card */}
+      <motion.div {...fadeUp} transition={{ delay: 0.17 }} className="mb-6">
+        <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-sunshine/10 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Share2 className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Share Play it Forward</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            I&apos;m lending board games in my neighborhood — join me!
+          </p>
+          {(demoMode ? demoProfile?.referralCode : dbMember?.referralCode) && (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-white rounded-xl elevation-1">
+              <span className="text-xs text-muted-foreground flex-1 truncate font-mono">
+                play-it-forward.vercel.app/join?ref=
+                <span className="text-foreground font-semibold">
+                  {demoMode ? demoProfile?.referralCode : dbMember?.referralCode}
+                </span>
+              </span>
+            </div>
+          )}
+          <button
+            onClick={handleCopyReferralLink}
+            disabled={!(demoMode ? demoProfile?.referralCode : dbMember?.referralCode)}
+            className="flex items-center justify-center gap-2 w-full h-10 rounded-xl bg-primary text-white text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 active:scale-[0.98]"
+          >
+            {copySuccess ? (
+              <>
+                <Check className="h-4 w-4" />
+                Link copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copy invite link
+              </>
+            )}
+          </button>
         </div>
       </motion.div>
 

@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getGame, getUser, getGameReviews, getCategoryEmoji, getCategoryLabel, formatWhatsAppLink, formatWhatsAppRequest, formatDistance, canBorrow, COMPLEXITY_LABELS, MOCK_VOLUNTEERS, RBS_CENTER } from "@/lib/data";
+import { getGame, getUser, getCategoryEmoji, getCategoryLabel, formatDistance, COMPLEXITY_LABELS, MOCK_VOLUNTEERS, RBS_CENTER } from "@/lib/data";
+import type { Review } from "@/lib/data";
 import { bestRelayRoute } from "@/lib/relay";
 import { Button } from "@/components/ui/button";
 import { RequestGameModal } from "@/components/request-game-modal";
 import { RelayRouteDisplay } from "@/components/relay-route-display";
-import { ArrowLeft, Users, MapPin, Heart, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand, BookOpen } from "lucide-react";
+import { ArrowLeft, Users, MapPin, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
+import { fetchGameReviews, submitReview } from "@/lib/queries";
+import { createClient } from "@/lib/supabase";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -25,6 +28,66 @@ export default function GameDetailPage() {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [localRequestCount, setLocalRequestCount] = useState(0);
   const { t, lang } = useLanguage();
+
+  // ── Reviews state ────────────────────────────────────────────────────
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Review form state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReviews() {
+      setReviewsLoading(true);
+      try {
+        const supabase = createClient();
+        if (supabase?.auth) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!cancelled) setIsLoggedIn(!!user);
+        }
+
+        const realReviews = await fetchGameReviews(id);
+        if (!cancelled) setReviews(realReviews);
+      } catch (err) {
+        console.error("[game-detail] reviews load error:", err);
+      } finally {
+        if (!cancelled) setReviewsLoading(false);
+      }
+    }
+
+    loadReviews();
+    return () => { cancelled = true; };
+  }, [id]);
+
+  async function handleReviewSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (reviewRating === 0 || !reviewComment.trim()) return;
+
+    setReviewSubmitting(true);
+    setReviewError(null);
+
+    const result = await submitReview(id, reviewRating, reviewComment);
+
+    if (result.success) {
+      setReviewSuccess(true);
+      setReviewRating(0);
+      setReviewComment("");
+      // Refresh reviews list
+      const updated = await fetchGameReviews(id);
+      setReviews(updated);
+    } else {
+      setReviewError(result.error ?? "Something went wrong. Please try again.");
+    }
+    setReviewSubmitting(false);
+  }
 
   if (!game) {
     return (
@@ -264,58 +327,113 @@ export default function GameDetailPage() {
           </motion.div>
 
           {/* Reviews */}
-          {(() => {
-            const reviews = getGameReviews(game.id);
-            if (reviews.length === 0) return null;
-            return (
-              <motion.div
-                {...fadeUp}
-                transition={{ duration: 0.4, delay: 0.35 }}
-                className="mb-6"
-              >
-                <h2 className="text-sm font-semibold mb-3">{t("game.reviews")} ({reviews.length})</h2>
-                <div className="space-y-3">
-                  {reviews.slice(0, 5).map((review) => {
-                    const reviewer = getUser(review.userId);
-                    return (
-                      <div key={review.id} className="rounded-2xl bg-background p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {reviewer && (
+          {!reviewsLoading && (reviews.length > 0 || isLoggedIn) && (
+            <motion.div
+              {...fadeUp}
+              transition={{ duration: 0.4, delay: 0.35 }}
+              className="mb-6"
+            >
+              {reviews.length > 0 && (
+                <>
+                  <h2 className="text-sm font-semibold mb-3">{t("game.reviews")} ({reviews.length})</h2>
+                  <div className="space-y-3 mb-5">
+                    {reviews.slice(0, 5).map((review) => {
+                      const reviewer = getUser(review.userId);
+                      return (
+                        <div key={review.id} className="rounded-2xl bg-background p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xs">
-                                {reviewer.name.charAt(0)}
+                                {(reviewer?.name ?? "U").charAt(0)}
                               </div>
-                            )}
-                            <span className="text-xs font-semibold">{reviewer?.name ?? "User"}</span>
+                              <span className="text-xs font-semibold">{reviewer?.name ?? "Community member"}</span>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3 w-3 ${i < review.rating ? "fill-sunshine text-sunshine" : "text-muted-foreground/30"}`}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-3 w-3 ${i < review.rating ? "fill-sunshine text-sunshine" : "text-muted-foreground/30"}`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{review.text}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-2xs text-muted-foreground">
-                            {new Date(review.createdAt).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", { month: "short", day: "numeric" })}
-                          </span>
-                          {review.helpful > 0 && (
-                            <span className="flex items-center gap-1 text-2xs text-muted-foreground">
-                              <ThumbsUp className="h-3 w-3" />
-                              {review.helpful} {t("game.helpful")}
+                          <p className="text-xs text-muted-foreground leading-relaxed">{review.text}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-2xs text-muted-foreground">
+                              {new Date(review.createdAt).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", { month: "short", day: "numeric" })}
                             </span>
-                          )}
+                            {review.helpful > 0 && (
+                              <span className="flex items-center gap-1 text-2xs text-muted-foreground">
+                                <ThumbsUp className="h-3 w-3" />
+                                {review.helpful} {t("game.helpful")}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Leave a Review form — only shown when logged in */}
+              {isLoggedIn && !reviewSuccess && (
+                <div className="rounded-2xl bg-background p-4">
+                  <h3 className="text-sm font-semibold mb-3">Leave a Review</h3>
+                  <form onSubmit={handleReviewSubmit} className="space-y-3">
+                    {/* Star Rating */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onMouseEnter={() => setReviewHover(i + 1)}
+                          onMouseLeave={() => setReviewHover(0)}
+                          onClick={() => setReviewRating(i + 1)}
+                          className="p-0.5"
+                        >
+                          <Star
+                            className={`h-6 w-6 transition-colors ${
+                              i < (reviewHover || reviewRating)
+                                ? "fill-sunshine text-sunshine"
+                                : "text-muted-foreground/30"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Comment */}
+                    <textarea
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience with this game..."
+                      rows={3}
+                      className="w-full rounded-xl bg-white border-0 elevation-1 p-3 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+
+                    {reviewError && (
+                      <p className="text-xs text-red-500">{reviewError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting || reviewRating === 0 || !reviewComment.trim()}
+                      className="w-full h-10 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    >
+                      {reviewSubmitting ? "Submitting..." : "Submit Review"}
+                    </button>
+                  </form>
                 </div>
-              </motion.div>
-            );
-          })()}
+              )}
+
+              {isLoggedIn && reviewSuccess && (
+                <div className="rounded-2xl bg-emerald-50 p-4 text-center">
+                  <p className="text-sm font-medium text-emerald-700">Thanks for your review!</p>
+                </div>
+              )}
+            </motion.div>
+          )}
 
           {/* Relay Route */}
           {relayRoute && (

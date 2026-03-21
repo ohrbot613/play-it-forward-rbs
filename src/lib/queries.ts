@@ -508,6 +508,58 @@ export async function createWish(
   return { success: true, id: (data as { id: string } | null)?.id ?? null };
 }
 
+// ─── Submit Review ────────────────────────────────────────────────────────
+
+export interface SubmitReviewResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Insert a new review into the `reviews` table.
+ * Requires the user to be authenticated.
+ */
+export async function submitReview(
+  gameId: string,
+  rating: number,
+  comment: string
+): Promise<SubmitReviewResult> {
+  const supabase = createClient();
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // Get the member ID from the members table (keyed off auth user)
+  const { data: memberRow, error: memberError } = await supabase
+    .from("members")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (memberError || !memberRow) {
+    return { success: false, error: "Member profile not found" };
+  }
+
+  const { error } = await supabase
+    .from("reviews")
+    .insert({
+      game_id: gameId,
+      reviewer_id: (memberRow as { id: string }).id,
+      rating,
+      text: comment.trim(),
+      helpful: 0,
+      created_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error("[queries] submitReview error:", error.message);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
