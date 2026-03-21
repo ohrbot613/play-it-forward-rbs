@@ -75,6 +75,16 @@ export default function GameDetailPage() {
     setReviewSubmitting(true);
     setReviewError(null);
 
+    // Re-check session before hitting the DB — handles expired sessions mid-page
+    const supabase = createClient();
+    if (supabase?.auth) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push(`/auth/signin?next=/game/${id}`);
+        return;
+      }
+    }
+
     const result = await submitReview(id, reviewRating, reviewComment);
 
     if (result.success) {
