@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getTopCouriers, type CourierProfile, type BadgeId } from "@/lib/data";
 import { CourierBadge } from "@/components/courier-badge";
@@ -268,9 +269,9 @@ export default function LeaderboardPage() {
         <p className="text-2xs text-muted-foreground mb-3">
           {t("lb.become_courier_sub")}
         </p>
-        <button className="px-5 py-2.5 rounded-full bg-primary text-white text-xs font-semibold elevation-2 hover:elevation-3 transition-all">
+        <Link href="/relay" className="inline-block px-5 py-2.5 rounded-full bg-primary text-white text-xs font-semibold elevation-2 hover:elevation-3 transition-all">
           {t("lb.become_courier_cta")}
-        </button>
+        </Link>
       </motion.div>
     </div>
   );

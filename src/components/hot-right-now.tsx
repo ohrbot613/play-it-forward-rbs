@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Flame, Star, MapPin } from "lucide-react";
@@ -43,13 +44,7 @@ export function HotRightNow({ games }: { games: Game[] }) {
               transition={{ duration: 0.3, delay: i * 0.08 }}
               className="shrink-0 w-[160px]"
             >
-              <div
-                role="link"
-                tabIndex={0}
-                onClick={() => { window.location.href = `/game/${game.id}`; }}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") window.location.href = `/game/${game.id}`; }}
-                className="cursor-pointer"
-              >
+              <Link href={`/game/${game.id}`} className="block">
                 <Card className="overflow-hidden border-0 elevation-2 hover:elevation-4 bg-white transition-shadow duration-300">
                   {/* Image */}
                   <div className="relative h-24 overflow-hidden">
@@ -98,7 +93,7 @@ export function HotRightNow({ games }: { games: Game[] }) {
                     )}
                   </div>
                 </Card>
-              </div>
+              </Link>
             </motion.div>
           );
         })}

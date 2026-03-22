@@ -8,6 +8,7 @@
 
 import { createClient } from "@/lib/supabase";
 import type { Game, UserProfile, Review, GameCategory, GameCondition, AgeGroup, Complexity, OwnershipType, CommunityWish, WishUrgency } from "@/lib/data";
+import type { VolunteerCourier } from "@/lib/relay";
 
 // ─── DB row types ─────────────────────────────────────────────────────────
 
@@ -832,8 +833,6 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
 
 // ─── Relay Volunteers ─────────────────────────────────────────────────────
 
-import type { VolunteerCourier } from "@/lib/relay";
-
 interface DbRelay {
   id: string;
   volunteer_id: string;
@@ -888,18 +887,21 @@ export async function fetchGameRelays(_gameId: string): Promise<VolunteerCourier
 
 // ─── Stats ────────────────────────────────────────────────────────────────
 
-export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number }> {
+export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number; totalMembers: number }> {
   const supabase = createClient();
-  if (!supabase) return { totalGames: 0, totalShares: 0 };
+  if (!supabase) return { totalGames: 0, totalShares: 0, totalMembers: 0 };
 
-  const { data, error } = await supabase
-    .from("games")
-    .select("handoffs");
+  const [gamesResult, membersResult] = await Promise.all([
+    supabase.from("games").select("handoffs"),
+    supabase.from("members").select("id", { count: "exact", head: true }),
+  ]);
 
-  if (error || !data) return { totalGames: 0, totalShares: 0 };
+  const { data, error } = gamesResult;
+  if (error || !data) return { totalGames: 0, totalShares: 0, totalMembers: 0 };
 
   return {
     totalGames: data.length,
     totalShares: data.reduce((sum: number, g: { handoffs: number | null }) => sum + (g.handoffs ?? 0), 0),
+    totalMembers: membersResult.count ?? 0,
   };
 }
