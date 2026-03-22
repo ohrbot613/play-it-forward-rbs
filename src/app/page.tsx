@@ -10,6 +10,7 @@ import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed } from "@/components/activity-feed";
 import { useLanguage } from "@/lib/i18n";
+import { HotRightNow } from "@/components/hot-right-now";
 
 const DISTANCE_OPTIONS = [
   { label: "0.5km", value: 0.5 },
@@ -159,6 +160,9 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* Hot Right Now */}
+      <HotRightNow games={allGames} />
 
       {/* Category Filters */}
       <motion.div

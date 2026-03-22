@@ -268,6 +268,10 @@ const translations = {
   "time.days_ago": { en: "{count}d ago", he: "לפני {count}י׳" },
   "time.weeks_ago": { en: "{count}w ago", he: "לפני {count}ש׳" },
 
+  // Hot Right Now
+  "hot.title": { en: "Hot Right Now", he: "חם עכשיו" },
+  "hot.families_want": { en: "🔥 {count} families want this", he: "🔥 {count} משפחות רוצות" },
+
   // Piece inventory
   "game.complete_set": { en: "Complete set", he: "סט שלם" },
   "game.missing_pieces": { en: "Missing pieces", he: "חלקים חסרים" },
