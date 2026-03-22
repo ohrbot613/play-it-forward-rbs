@@ -2058,3 +2058,148 @@ export const MOCK_VOLUNTEERS = [
 
 /** RBS center — used as default requester position when GPS unavailable */
 export const RBS_CENTER = { lat: 31.738, lng: 34.9875 };
+
+// ============================================
+// GAMIFICATION — Courier Leaderboard & Badges
+// ============================================
+
+export type BadgeId =
+  | "first-delivery"
+  | "five-deliveries"
+  | "ten-deliveries"
+  | "neighborhood-hero"
+  | "seven-day-streak"
+  | "community-hero"
+  | "speed-demon"
+  | "cross-neighborhood";
+
+export interface CourierProfile {
+  id: string;
+  name: string;
+  avatar: string;
+  neighborhood: string;
+  totalDeliveries: number;
+  currentStreak: number;       // consecutive days with a delivery
+  longestStreak: number;
+  badges: BadgeId[];
+  joinedAt: string;
+  lastDeliveryAt: string;
+  gamesDelivered: string[];    // game IDs
+}
+
+export const MOCK_COURIERS: CourierProfile[] = [
+  {
+    id: "c1",
+    name: "Rivka Moskowitz",
+    avatar: "https://i.pravatar.cc/150?u=rivka-c",
+    neighborhood: "RBS Aleph",
+    totalDeliveries: 34,
+    currentStreak: 12,
+    longestStreak: 18,
+    badges: ["first-delivery", "five-deliveries", "ten-deliveries", "seven-day-streak", "neighborhood-hero", "community-hero"],
+    joinedAt: "2025-11-01T10:00:00Z",
+    lastDeliveryAt: "2026-03-22T09:15:00Z",
+    gamesDelivered: ["g1", "g2", "g5", "g8"],
+  },
+  {
+    id: "c2",
+    name: "Dov Kellerman",
+    avatar: "https://i.pravatar.cc/150?u=dov-c",
+    neighborhood: "RBS Bet",
+    totalDeliveries: 27,
+    currentStreak: 8,
+    longestStreak: 14,
+    badges: ["first-delivery", "five-deliveries", "ten-deliveries", "seven-day-streak", "cross-neighborhood"],
+    joinedAt: "2025-12-10T14:00:00Z",
+    lastDeliveryAt: "2026-03-21T17:30:00Z",
+    gamesDelivered: ["g3", "g4", "g7"],
+  },
+  {
+    id: "c3",
+    name: "Shira Levy",
+    avatar: "https://i.pravatar.cc/150?u=shira-c",
+    neighborhood: "RBS Gimmel",
+    totalDeliveries: 19,
+    currentStreak: 5,
+    longestStreak: 11,
+    badges: ["first-delivery", "five-deliveries", "ten-deliveries", "speed-demon"],
+    joinedAt: "2026-01-05T08:30:00Z",
+    lastDeliveryAt: "2026-03-21T11:45:00Z",
+    gamesDelivered: ["g6", "g9", "g11"],
+  },
+  {
+    id: "c4",
+    name: "Benny Rosenberg",
+    avatar: "https://i.pravatar.cc/150?u=benny-c",
+    neighborhood: "RBS Aleph",
+    totalDeliveries: 15,
+    currentStreak: 3,
+    longestStreak: 9,
+    badges: ["first-delivery", "five-deliveries", "ten-deliveries"],
+    joinedAt: "2026-01-20T16:00:00Z",
+    lastDeliveryAt: "2026-03-20T14:00:00Z",
+    gamesDelivered: ["g2", "g10"],
+  },
+  {
+    id: "c5",
+    name: "Michal Twersky",
+    avatar: "https://i.pravatar.cc/150?u=michal-c",
+    neighborhood: "Dolev",
+    totalDeliveries: 11,
+    currentStreak: 7,
+    longestStreak: 7,
+    badges: ["first-delivery", "five-deliveries", "seven-day-streak"],
+    joinedAt: "2026-02-01T12:00:00Z",
+    lastDeliveryAt: "2026-03-22T08:00:00Z",
+    gamesDelivered: ["g1", "g5"],
+  },
+  {
+    id: "c6",
+    name: "Avi Stern",
+    avatar: "https://i.pravatar.cc/150?u=avi-c",
+    neighborhood: "RBS Gimmel",
+    totalDeliveries: 8,
+    currentStreak: 2,
+    longestStreak: 5,
+    badges: ["first-delivery", "five-deliveries"],
+    joinedAt: "2026-02-15T09:00:00Z",
+    lastDeliveryAt: "2026-03-21T16:20:00Z",
+    gamesDelivered: ["g3"],
+  },
+  {
+    id: "c7",
+    name: "Noa Berkowitz",
+    avatar: "https://i.pravatar.cc/150?u=noa-c",
+    neighborhood: "RBS Bet",
+    totalDeliveries: 4,
+    currentStreak: 1,
+    longestStreak: 4,
+    badges: ["first-delivery"],
+    joinedAt: "2026-03-01T10:30:00Z",
+    lastDeliveryAt: "2026-03-19T13:00:00Z",
+    gamesDelivered: ["g8"],
+  },
+  {
+    id: "c8",
+    name: "Yael Friedman",
+    avatar: "https://i.pravatar.cc/150?u=yael-c",
+    neighborhood: "RBS Aleph",
+    totalDeliveries: 2,
+    currentStreak: 0,
+    longestStreak: 2,
+    badges: ["first-delivery"],
+    joinedAt: "2026-03-10T11:00:00Z",
+    lastDeliveryAt: "2026-03-17T10:00:00Z",
+    gamesDelivered: ["g12"],
+  },
+];
+
+export function getTopCouriers(limit = 10): CourierProfile[] {
+  return [...MOCK_COURIERS]
+    .sort((a, b) => b.totalDeliveries - a.totalDeliveries)
+    .slice(0, limit);
+}
+
+export function getCourierById(id: string): CourierProfile | undefined {
+  return MOCK_COURIERS.find(c => c.id === id);
+}

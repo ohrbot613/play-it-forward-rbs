@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, PlusCircle, User, MapPin, Heart, LayoutDashboard } from "lucide-react";
+import { Search, PlusCircle, User, MapPin, Heart, LayoutDashboard, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 
@@ -12,7 +12,7 @@ const links: { href: string; labelKey: TranslationKey; icon: typeof Search }[] =
   { href: "/map", labelKey: "nav.map", icon: MapPin },
   { href: "/add", labelKey: "nav.share", icon: PlusCircle },
   { href: "/requests", labelKey: "nav.wishes", icon: Heart },
-  { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/leaderboard", labelKey: "nav.leaderboard", icon: Trophy },
 ];
 
 export function BottomNav() {

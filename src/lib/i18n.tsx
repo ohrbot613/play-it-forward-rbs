@@ -296,6 +296,35 @@ const translations = {
   "journey.cta_button": { en: "Request this game", he: "בקש את המשחק" },
   "journey.not_found": { en: "Game not found", he: "משחק לא נמצא" },
   "journey.back_to_games": { en: "Back to games", he: "חזרה למשחקים" },
+
+  // Leaderboard / Gamification
+  "nav.leaderboard": { en: "Leaders", he: "מובילים" },
+  "lb.title": { en: "Community Heroes", he: "גיבורי הקהילה" },
+  "lb.subtitle": { en: "Top couriers keeping games moving", he: "השליחים המובילים שמזיזים משחקים" },
+  "lb.deliveries": { en: "deliveries", he: "משלוחים" },
+  "lb.delivery": { en: "delivery", he: "משלוח" },
+  "lb.streak": { en: "day streak", he: "ימים ברצף" },
+  "lb.longest_streak": { en: "longest streak", he: "רצף ארוך ביותר" },
+  "lb.current_streak": { en: "Current streak", he: "רצף נוכחי" },
+  "lb.badges": { en: "Badges", he: "תגים" },
+  "lb.rank": { en: "Rank", he: "דירוג" },
+  "lb.courier_since": { en: "Courier since", he: "שליח מאז" },
+  "lb.total_deliveries": { en: "Total Deliveries", he: "סה\"כ משלוחים" },
+  "lb.active_streak": { en: "Active Streak", he: "רצף פעיל" },
+  "lb.days": { en: "days", he: "ימים" },
+  "lb.become_courier": { en: "Want to join the leaderboard?", he: "רוצה להצטרף ללוח המובילים?" },
+  "lb.become_courier_cta": { en: "Become a Relay Courier", he: "הפוך לשליח" },
+  "lb.become_courier_sub": { en: "Deliver games between neighborhoods and earn badges!", he: "העבר משחקים בין שכונות וצבור תגים!" },
+
+  // Badge names (bilingual)
+  "badge.first-delivery": { en: "First Delivery", he: "משלוח ראשון" },
+  "badge.five-deliveries": { en: "5 Deliveries", he: "5 משלוחים" },
+  "badge.ten-deliveries": { en: "10 Deliveries", he: "10 משלוחים" },
+  "badge.neighborhood-hero": { en: "Neighborhood Hero", he: "גיבור השכונה" },
+  "badge.seven-day-streak": { en: "7-Day Streak", he: "רצף 7 ימים" },
+  "badge.community-hero": { en: "Community Hero", he: "גיבור הקהילה" },
+  "badge.speed-demon": { en: "Speed Demon", he: "מהיר כברק" },
+  "badge.cross-neighborhood": { en: "Cross-Neighborhood", he: "חוצה שכונות" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
