@@ -91,6 +91,19 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
                 {getCategoryLabel(game.category)}
               </p>
 
+              {/* Piece completeness badge */}
+              {game.piecesComplete === false ? (
+                <div className="mt-1.5 flex items-center gap-1 text-2xs text-amber-600 dark:text-amber-400 font-medium" title={game.missingPiecesNote}>
+                  <span>⚠️</span>
+                  <span className="truncate">{t("game.missing_pieces")}</span>
+                </div>
+              ) : game.piecesComplete === true ? (
+                <div className="mt-1.5 flex items-center gap-1 text-2xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span>✅</span>
+                  <span>{t("game.complete_set")}</span>
+                </div>
+              ) : null}
+
               <div className="mt-2.5 flex items-center gap-3 text-2xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Star className="h-3 w-3 fill-sunshine text-sunshine" />

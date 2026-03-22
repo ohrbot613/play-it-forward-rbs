@@ -268,6 +268,13 @@ const translations = {
   "time.days_ago": { en: "{count}d ago", he: "לפני {count}י׳" },
   "time.weeks_ago": { en: "{count}w ago", he: "לפני {count}ש׳" },
 
+  // Piece inventory
+  "game.complete_set": { en: "Complete set", he: "סט שלם" },
+  "game.missing_pieces": { en: "Missing pieces", he: "חלקים חסרים" },
+  "add.pieces_complete": { en: "Is the set complete?", he: "האם הסט שלם?" },
+  "add.missing_pieces_note": { en: "What's missing?", he: "מה חסר?" },
+  "add.missing_pieces_placeholder": { en: "e.g. 2 red tiles, 1 die", he: "לדוגמה: 2 אריחים אדומים, קובייה 1" },
+
   // Game card
   "game.see_journey": { en: "See journey →", he: "ראה מסע ←" },
 

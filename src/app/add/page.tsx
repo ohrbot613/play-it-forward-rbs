@@ -93,6 +93,8 @@ export default function AddGamePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [gameType, setGameType] = useState<GameType | "">("");
   const [ageRange, setAgeRange] = useState<AgeRange | "">("");
+  const [piecesComplete, setPiecesComplete] = useState(true);
+  const [missingPiecesNote, setMissingPiecesNote] = useState("");
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -305,6 +307,8 @@ export default function AddGamePage() {
         photos: photoUrls.length > 0 ? photoUrls : null,
         game_type: gameType || null,
         age_range: ageRange || null,
+        pieces_complete: piecesComplete,
+        missing_pieces_note: piecesComplete ? null : (missingPiecesNote || null),
       });
 
       if (error) {
@@ -413,6 +417,8 @@ export default function AddGamePage() {
             setAiFilled(false);
             setGameType("");
             setAgeRange("");
+            setPiecesComplete(true);
+            setMissingPiecesNote("");
           }}
           variant="outline"
           className="rounded-2xl h-11 px-5"
@@ -684,6 +690,44 @@ export default function AddGamePage() {
               className="bg-white border-0 elevation-1 h-12 rounded-2xl w-20 text-center focus-visible:elevation-2"
             />
           </div>
+        </div>
+
+        {/* Piece completeness */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">{t("add.pieces_complete")}</label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPiecesComplete(!piecesComplete)}
+              className={cn(
+                "relative h-6 w-11 rounded-full transition-colors duration-200",
+                piecesComplete ? "bg-emerald-500" : "bg-amber-400"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white elevation-1 transition-transform duration-200",
+                  piecesComplete && "translate-x-5"
+                )}
+              />
+            </button>
+            <span className="text-xs text-muted-foreground font-medium">
+              {piecesComplete ? `✅ ${t("game.complete_set")}` : `⚠️ ${t("game.missing_pieces")}`}
+            </span>
+          </div>
+          {!piecesComplete && (
+            <div className="mt-3">
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">
+                {t("add.missing_pieces_note")}
+              </label>
+              <Input
+                placeholder={t("add.missing_pieces_placeholder")}
+                value={missingPiecesNote}
+                onChange={(e) => setMissingPiecesNote(e.target.value)}
+                className="bg-white border-0 elevation-1 h-10 rounded-2xl text-sm focus-visible:elevation-2 transition-shadow"
+              />
+            </div>
+          )}
         </div>
 
         {/* Description */}

@@ -81,6 +81,8 @@ export interface Game {
   lentSince?: string; // ISO date, only for lent games
   available: boolean;
   requestCount: number;
+  piecesComplete?: boolean;
+  missingPiecesNote?: string;
 }
 
 export interface GameRequest {
@@ -483,6 +485,7 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u1",
     available: true,
     requestCount: 3,
+    piecesComplete: true,
   },
   {
     id: "2",
@@ -527,6 +530,8 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u5",
     available: true,
     requestCount: 5,
+    piecesComplete: false,
+    missingPiecesNote: "2 tiles missing (joker #1 and blue 7)",
   },
   {
     id: "4",
@@ -1084,6 +1089,8 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u4",
     available: true,
     requestCount: 6,
+    piecesComplete: false,
+    missingPiecesNote: "~5 small bricks missing, doesn't affect main builds",
   },
   {
     id: "29",
@@ -1552,6 +1559,7 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u9",
     available: true,
     requestCount: 0,
+    piecesComplete: true,
   },
   {
     id: "50",
@@ -1574,6 +1582,8 @@ export const MOCK_GAMES: Game[] = [
     ownerId: "u3",
     available: true,
     requestCount: 0,
+    piecesComplete: false,
+    missingPiecesNote: "1 corner piece missing",
   },
   {
     id: "51",
