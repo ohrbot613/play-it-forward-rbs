@@ -11,6 +11,18 @@ export const metadata: Metadata = {
   title: "Play it Forward | RBS Game Sharing",
   description: "Free board game sharing across Ramat Beit Shemesh — keeping kids happy during tough times",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Play it Forward",
+  },
+  icons: {
+    apple: "/icon-192.png",
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
