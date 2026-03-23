@@ -1073,3 +1073,55 @@ export async function registerAsRelay(signup: RelaySignupData): Promise<{ succes
 
   return { success: true };
 }
+
+export interface CourierStat {
+  id: string;
+  name: string;
+  avatar: string;
+  neighborhood: string;
+  totalDeliveries: number;
+  rating: number;
+  joinedAt: string;
+}
+
+export async function fetchTopCouriers(limit = 10): Promise<CourierStat[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("relays")
+    .select(`
+      id,
+      total_deliveries,
+      rating,
+      created_at,
+      members!relays_volunteer_id_fkey (
+        id,
+        name,
+        avatar_url,
+        neighborhood
+      )
+    `)
+    .eq("is_active", true)
+    .order("total_deliveries", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  type RelayRow = { id: string; total_deliveries: number; rating: number; created_at: string; members: { id: string; name: string; avatar_url: string; neighborhood: string } | null };
+
+  return (data as RelayRow[])
+    .filter((r) => r.members)
+    .map((r) => {
+      const m = r.members as { id: string; name: string; avatar_url: string; neighborhood: string };
+      return {
+        id: r.id,
+        name: m.name ?? "Unknown",
+        avatar: m.avatar_url ?? `https://i.pravatar.cc/150?u=${r.id}`,
+        neighborhood: m.neighborhood ?? "",
+        totalDeliveries: r.total_deliveries ?? 0,
+        rating: r.rating ?? 5.0,
+        joinedAt: r.created_at,
+      };
+    });
+}

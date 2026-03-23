@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getTopCouriers, type CourierProfile, type BadgeId } from "@/lib/data";
+import { fetchTopCouriers, type CourierStat } from "@/lib/queries";
 import { CourierBadge } from "@/components/courier-badge";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -191,12 +192,37 @@ function CourierRow({
 }
 
 export default function LeaderboardPage() {
-  const couriers = getTopCouriers(10);
+  const [liveStats, setLiveStats] = useState<CourierStat[]>([]);
+  const mockCouriers = getTopCouriers(10);
   const { t } = useLanguage();
 
+  useEffect(() => {
+    fetchTopCouriers(10).then((data) => {
+      if (data.length > 0) setLiveStats(data);
+    });
+  }, []);
+
+  // Use real data if available, fall back to mock
+  // Map CourierStat → CourierProfile shape (streak/badge fields default to 0/[])
+  const couriers: CourierProfile[] = liveStats.length > 0
+    ? liveStats.map((s) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+        neighborhood: s.neighborhood,
+        totalDeliveries: s.totalDeliveries,
+        currentStreak: 0,
+        longestStreak: 0,
+        badges: [] as BadgeId[],
+        joinedAt: s.joinedAt,
+        lastDeliveryAt: s.joinedAt,
+        gamesDelivered: [],
+      }))
+    : mockCouriers;
+
   const totalDeliveries = couriers.reduce((s, c) => s + c.totalDeliveries, 0);
-  const totalStreakDays = couriers.reduce((s, c) => s + c.currentStreak, 0);
-  const totalBadges = couriers.reduce((s, c) => s + c.badges.length, 0);
+  const totalStreakDays = (mockCouriers as CourierProfile[]).reduce((s, c) => s + c.currentStreak, 0);
+  const totalBadges = (mockCouriers as CourierProfile[]).reduce((s, c) => s + c.badges.length, 0);
 
   return (
     <div className="px-4 pb-24">
