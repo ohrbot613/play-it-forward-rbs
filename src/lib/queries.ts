@@ -908,3 +908,75 @@ export async function fetchGameStats(): Promise<{ totalGames: number; totalShare
     totalMembers: membersResult.count ?? 0,
   };
 }
+
+// ─── Relay Volunteer ───────────────────────────────────────────────────────
+
+export interface RelaySignupData {
+  fromNeighborhood: string;
+  toNeighborhood: string;
+  availableDays: string[];
+  availableHours: string;
+}
+
+/**
+ * Check if the current user is already a relay volunteer.
+ */
+export async function fetchIsRelayVolunteer(): Promise<boolean> {
+  const supabase = createClient();
+  if (!supabase) return false;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from("members")
+    .select("is_relay_volunteer")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (error || !data) return false;
+  return data.is_relay_volunteer === true;
+}
+
+/**
+ * Register the current user as a relay volunteer.
+ * Updates their member record and inserts a relays row.
+ */
+export async function registerAsRelay(signup: RelaySignupData): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+  if (!supabase) return { success: false, error: "Not configured" };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not signed in" };
+
+  // Get member ID
+  const { data: member, error: memberError } = await supabase
+    .from("members")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (memberError || !member) return { success: false, error: "Member not found" };
+
+  // Insert relay row (ignore if duplicate)
+  const { error: relayError } = await supabase
+    .from("relays")
+    .upsert({
+      volunteer_id: member.id,
+      from_neighborhood: signup.fromNeighborhood,
+      to_neighborhood: signup.toNeighborhood,
+      available_days: signup.availableDays,
+      available_hours: signup.availableHours,
+      is_active: true,
+    }, { onConflict: "volunteer_id" });
+
+  if (relayError) return { success: false, error: relayError.message };
+
+  // Update member flag
+  await supabase
+    .from("members")
+    .update({ is_relay_volunteer: true })
+    .eq("id", member.id);
+
+  return { success: true };
+}
