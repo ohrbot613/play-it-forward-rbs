@@ -1,14 +1,48 @@
 /*
- * POST /api/create-wish — REC-148
+ * POST /api/create-wish — REC-43 / REC-148
  *
  * Called when a user submits the "Add a Wish" modal on the requests page.
- * 1. Inserts a row into `community_wishes` table in Supabase (graceful if missing).
- * 2. Sends a WhatsApp notification to the org via Twilio.
+ * 1. Resolves the authenticated user's member profile (name + phone).
+ * 2. Inserts a row into `community_wishes` table in Supabase (graceful if missing).
+ * 3. Sends a WhatsApp notification to the org via Twilio.
  *
  * Body: { gameTitle: string, notes?: string, neighborhood: string }
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase-server";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth + member resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface RequesterInfo {
+  userId: string | null;
+  name: string | null;
+  phone: string | null;
+}
+
+async function getRequesterInfo(): Promise<RequesterInfo> {
+  try {
+    const supabase = createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { userId: null, name: null, phone: null };
+
+    const { data: member } = await supabase
+      .from("members")
+      .select("name, phone")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    return {
+      userId: user.id,
+      name: (member as { name: string; phone: string | null } | null)?.name ?? null,
+      phone: (member as { name: string; phone: string | null } | null)?.phone ?? null,
+    };
+  } catch {
+    return { userId: null, name: null, phone: null };
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Supabase helper
@@ -27,6 +61,9 @@ async function insertCommunityWish(params: {
   gameTitle: string;
   notes?: string;
   neighborhood: string;
+  requesterId: string | null;
+  requesterName: string | null;
+  requesterPhone: string | null;
 }): Promise<{ id: string } | null> {
   const cfg = getSupabaseConfig();
   if (!cfg) {
@@ -47,6 +84,9 @@ async function insertCommunityWish(params: {
         title: params.gameTitle,
         description: params.notes ?? "",
         neighborhood: params.neighborhood,
+        requester_id: params.requesterId ?? null,
+        requester_name: params.requesterName ?? null,
+        requester_phone: params.requesterPhone ?? null,
         status: "open",
         urgency: "normal",
         created_at: new Date().toISOString(),
@@ -136,10 +176,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Insert into Supabase (graceful — table may not exist yet)
-    const inserted = await insertCommunityWish({ gameTitle, notes, neighborhood });
+    // 1. Resolve the authenticated user's member profile
+    const requester = await getRequesterInfo();
 
-    // 2. Send WhatsApp notification to org
+    // 2. Insert into Supabase (graceful — table may not exist yet)
+    const inserted = await insertCommunityWish({
+      gameTitle,
+      notes,
+      neighborhood,
+      requesterId: requester.userId,
+      requesterName: requester.name,
+      requesterPhone: requester.phone,
+    });
+
+    // 3. Send WhatsApp notification to org
     const orgPhone =
       process.env.ORG_WHATSAPP_NUMBER ?? process.env.TWILIO_WHATSAPP_FROM;
 

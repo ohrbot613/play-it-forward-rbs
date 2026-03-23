@@ -617,6 +617,8 @@ interface DbCommunityWish {
   description: string;
   neighborhood: string;
   requester_id: string | null;
+  requester_name: string | null;
+  requester_phone: string | null;
   status: string;
   urgency: string;
   category: string | null;
@@ -636,7 +638,7 @@ export async function fetchCommunityWishes(): Promise<CommunityWish[]> {
 
   const { data, error } = await supabase
     .from("community_wishes")
-    .select("id, title, description, neighborhood, requester_id, status, urgency, category, age_range, responses, created_at")
+    .select("id, title, description, neighborhood, requester_id, requester_name, requester_phone, status, urgency, category, age_range, responses, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -649,8 +651,9 @@ export async function fetchCommunityWishes(): Promise<CommunityWish[]> {
   return (data as DbCommunityWish[]).map((row) => ({
     id: row.id,
     requesterId: row.requester_id ?? "anonymous",
-    requesterName: "Community Member",
+    requesterName: row.requester_name ?? "Community Member",
     requesterAvatar: `https://api.dicebear.com/7.x/thumbs/svg?seed=${row.id}`,
+    requesterPhone: row.requester_phone ?? undefined,
     neighborhood: row.neighborhood,
     title: row.title,
     description: row.description,
