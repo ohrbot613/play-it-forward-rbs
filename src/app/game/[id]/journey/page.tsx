@@ -1,11 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Gift, Repeat, Star, MapPin, Clock, Heart } from "lucide-react";
 import { getGame, getUser } from "@/lib/data";
+import { fetchGame, fetchGameJourney, type JourneyEntry } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import type { Game } from "@/lib/data";
 
 const NEIGHBORHOOD_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   "RBS Aleph": { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" },
@@ -17,19 +20,6 @@ const NEIGHBORHOOD_COLORS: Record<string, { bg: string; text: string; dot: strin
 
 function getNeighborhoodStyle(neighborhood: string) {
   return NEIGHBORHOOD_COLORS[neighborhood] ?? { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-400" };
-}
-
-interface JourneyEntry {
-  id: string;
-  type: "donated" | "borrowed" | "returned" | "current";
-  personName: string;
-  personInitials: string;
-  neighborhood: string;
-  date: string;
-  duration?: string;
-  rating?: number;
-  note?: string;
-  avatarColor: string;
 }
 
 function getMockJourney(gameTitle: string, ownerId: string): JourneyEntry[] {
@@ -106,7 +96,37 @@ export default function GameJourneyPage() {
   const id = params?.id ?? "";
   const router = useRouter();
   const { t, lang } = useLanguage();
-  const game = getGame(id);
+  const [game, setGame] = useState<Game | null>(getGame(id) ?? null);
+  const [journey, setJourney] = useState<JourneyEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const [realGame, realJourney] = await Promise.all([
+        fetchGame(id),
+        fetchGameJourney(id),
+      ]);
+      if (realGame) setGame(realGame);
+      else if (!game) setGame(getGame(id) ?? null);
+      if (realJourney.length > 0) {
+        setJourney(realJourney);
+      } else if (realGame || game) {
+        const g = realGame ?? game!;
+        setJourney(getMockJourney(g.title, g.ownerId));
+      }
+      setLoading(false);
+    }
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   if (!game) {
     return (
@@ -121,8 +141,6 @@ export default function GameJourneyPage() {
       </div>
     );
   }
-
-  const journey = getMockJourney(game.title, game.ownerId);
   const totalFamilies = journey.filter(j => j.type === "borrowed" || j.type === "current").length;
   const totalWeeks = journey
     .filter(j => j.duration)

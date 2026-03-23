@@ -888,6 +888,99 @@ export async function fetchGameRelays(_gameId: string): Promise<VolunteerCourier
     }));
 }
 
+// ─── Game Journey ─────────────────────────────────────────────────────────
+
+export interface JourneyEntry {
+  id: string;
+  type: "donated" | "borrowed" | "returned" | "current";
+  personName: string;
+  personInitials: string;
+  neighborhood: string;
+  date: string;
+  duration?: string;
+  rating?: number;
+  note?: string;
+  avatarColor: string;
+}
+
+const AVATAR_COLORS = [
+  "bg-emerald-500", "bg-sky-500", "bg-violet-500", "bg-rose-500",
+  "bg-amber-500", "bg-teal-500", "bg-indigo-500", "bg-pink-500",
+];
+
+function colorForName(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function initials(name: string): string {
+  return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
+export async function fetchGameJourney(gameId: string): Promise<JourneyEntry[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("lending_requests")
+    .select(`
+      id, status, created_at, message,
+      borrower:members!lending_requests_borrower_id_fkey ( id, name, neighborhood ),
+      lender:members!lending_requests_lender_id_fkey ( id, name, neighborhood )
+    `)
+    .eq("game_id", gameId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("[queries] fetchGameJourney error:", error.message);
+    }
+    return [];
+  }
+
+  if (!data || data.length === 0) return [];
+
+  const entries: JourneyEntry[] = [];
+
+  // First entry: donated/lent by the lender of the first record
+  const first = data[0] as {
+    id: string; status: string; created_at: string; message: string | null;
+    borrower: { id: string; name: string; neighborhood: string } | null;
+    lender: { id: string; name: string; neighborhood: string } | null;
+  };
+  if (first.lender) {
+    entries.push({
+      id: `donated-${first.id}`,
+      type: "donated",
+      personName: first.lender.name,
+      personInitials: initials(first.lender.name),
+      neighborhood: first.lender.neighborhood,
+      date: first.created_at,
+      note: first.message ?? undefined,
+      avatarColor: colorForName(first.lender.name),
+    });
+  }
+
+  // Each request = a borrow entry
+  for (const row of data as typeof first[]) {
+    const r = row as typeof first;
+    if (!r.borrower) continue;
+    entries.push({
+      id: `borrowed-${r.id}`,
+      type: r.status === "returned" ? "returned" : (r.status === "active" ? "current" : "borrowed"),
+      personName: r.borrower.name,
+      personInitials: initials(r.borrower.name),
+      neighborhood: r.borrower.neighborhood,
+      date: r.created_at,
+      note: r.message ?? undefined,
+      avatarColor: colorForName(r.borrower.name),
+    });
+  }
+
+  return entries;
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────
 
 export async function fetchGameStats(): Promise<{ totalGames: number; totalShares: number; totalMembers: number }> {
