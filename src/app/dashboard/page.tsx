@@ -71,12 +71,15 @@ interface ActiveLoan {
 interface DbLendingOffer {
   id: string;
   game_id: string;
-  lender_user_id: string;
-  borrower_user_id: string;
+  game_title: string;
+  lender_id: string;
+  lender_auth_user_id: string;
+  requester_id: string;
+  requester_name: string | null;
+  requester_avatar: string | null;
   status: string;
   created_at: string;
   game?: { title: string; photos: string[] | null; image_url: string | null } | null;
-  borrower?: { name: string; avatar_url: string | null } | null;
   lender?: { name: string } | null;
 }
 
@@ -131,17 +134,21 @@ export default function DashboardPage() {
           setCurrentMemberId(member.id);
         }
 
-        // Fetch lending_offers where user is lender OR borrower, status pending/active/completed
+        // Fetch lending_offers where user is lender OR requester, status pending/active/returned
+        // REC-291 fix: use correct column names (lender_auth_user_id, requester_id, requester_name/avatar)
+        const orFilter = member
+          ? `lender_auth_user_id.eq.${user.id},requester_id.eq.${member.id}`
+          : `lender_auth_user_id.eq.${user.id}`;
         const { data: offersRaw, error: offersError } = await supabase
           .from("lending_offers")
           .select(`
-            id, game_id, lender_user_id, borrower_user_id, status, created_at,
-            game:games!lending_offers_game_id_fkey (title, photos, image_url),
-            borrower:members!lending_offers_borrower_user_id_fkey (name, avatar_url),
-            lender:members!lending_offers_lender_user_id_fkey (name)
+            id, game_id, game_title, lender_id, lender_auth_user_id,
+            requester_id, requester_name, requester_avatar, status, created_at,
+            game:games(title, photos, image_url),
+            lender:members!lending_offers_lender_id_fkey(name)
           `)
-          .or(`lender_user_id.eq.${user.id},borrower_user_id.eq.${user.id}`)
-          .in("status", ["pending", "active", "completed"])
+          .or(orFilter)
+          .in("status", ["pending", "active", "returned"])
           .order("created_at", { ascending: false });
 
         if (offersError) {
@@ -154,29 +161,29 @@ export default function DashboardPage() {
 
           // Split into requests (pending, user is lender) and active loans (active, user is lender)
           const incomingRequests: LoanRequest[] = offers
-            .filter((o) => o.status === "pending" && o.lender_user_id === user.id)
+            .filter((o) => o.status === "pending" && o.lender_auth_user_id === user.id)
             .map((o) => ({
               id: o.id,
               gameId: o.game_id,
-              gameTitle: o.game?.title ?? "Unknown game",
-              requesterName: o.borrower?.name ?? "Someone",
-              requesterAvatar: o.borrower?.avatar_url
-                ? o.borrower.avatar_url
-                : `https://i.pravatar.cc/150?u=${o.borrower_user_id}`,
+              gameTitle: o.game_title || o.game?.title || "Unknown game",
+              requesterName: o.requester_name ?? "Someone",
+              requesterAvatar: o.requester_avatar
+                ? o.requester_avatar
+                : `https://i.pravatar.cc/150?u=${o.requester_id}`,
               requestedAt: o.created_at.split("T")[0],
               status: "pending" as const,
             }));
 
           const activeLoans: ActiveLoan[] = offers
-            .filter((o) => o.status === "active" && o.lender_user_id === user.id)
+            .filter((o) => o.status === "active" && o.lender_auth_user_id === user.id)
             .map((o) => ({
               id: o.id,
               gameId: o.game_id,
-              gameTitle: o.game?.title ?? "Unknown game",
-              borrowerName: o.borrower?.name ?? "Someone",
-              borrowerAvatar: o.borrower?.avatar_url
-                ? o.borrower.avatar_url
-                : `https://i.pravatar.cc/150?u=${o.borrower_user_id}`,
+              gameTitle: o.game_title || o.game?.title || "Unknown game",
+              borrowerName: o.requester_name ?? "Someone",
+              borrowerAvatar: o.requester_avatar
+                ? o.requester_avatar
+                : `https://i.pravatar.cc/150?u=${o.requester_id}`,
               lentAt: o.created_at.split("T")[0],
               returned: false,
             }));
@@ -262,11 +269,24 @@ export default function DashboardPage() {
     }
   }
 
-  function handleReturn(id: string) {
+  async function handleReturn(id: string) {
+    // Optimistic UI update
     setLoans((prev) =>
       prev.map((l) => (l.id === id ? { ...l, returned: true } : l))
     );
     addToast(t("dash.toast_returned"), "success");
+
+    // REC-292 fix: persist return to Supabase
+    const supabase = createClient();
+    if (supabase) {
+      const { error } = await supabase
+        .from("lending_offers")
+        .update({ status: "returned" })
+        .eq("id", id);
+      if (error) {
+        console.error("[dashboard] return offer error:", error.message);
+      }
+    }
   }
 
   if (dataLoading) {
