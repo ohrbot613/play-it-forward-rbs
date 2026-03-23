@@ -273,20 +273,29 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
 // AddWishModal
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface InventoryMatch {
+  id: string;
+  title: string;
+  neighborhood: string;
+  holderName: string;
+}
+
 interface NewWishData {
   id: string;
   gameTitle: string;
   neighborhood: string;
   notes: string;
+  matches?: InventoryMatch[];
 }
 
 interface AddWishModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (wish: NewWishData) => void;
+  matchedGames?: InventoryMatch[];
 }
 
-function AddWishModal({ isOpen, onClose, onSuccess }: AddWishModalProps) {
+function AddWishModal({ isOpen, onClose, onSuccess, matchedGames }: AddWishModalProps) {
   const { t } = useLanguage();
   const [gameTitle, setGameTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -331,6 +340,7 @@ function AddWishModal({ isOpen, onClose, onSuccess }: AddWishModalProps) {
           gameTitle: gameTitle.trim(),
           neighborhood,
           notes: notes.trim(),
+          matches: data.matches,
         });
         handleClose();
       }, 1800);
@@ -372,13 +382,27 @@ function AddWishModal({ isOpen, onClose, onSuccess }: AddWishModalProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-6"
                 >
-                  <div className="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                  <div className={`h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3 ${matchedGames && matchedGames.length > 0 ? "bg-primary/10" : "bg-emerald-50"}`}>
+                    {matchedGames && matchedGames.length > 0
+                      ? <Sparkles className="h-7 w-7 text-primary" />
+                      : <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                    }
                   </div>
-                  <p className="text-base font-semibold">{t("wish.success")}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t("wish.success_sub")}
-                  </p>
+                  {matchedGames && matchedGames.length > 0 ? (
+                    <>
+                      <p className="text-base font-semibold">🎯 Match in the library!</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {matchedGames[0].title} is held by {matchedGames[0].holderName} in {matchedGames[0].neighborhood}. We&apos;ve notified the coordinator!
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-base font-semibold">{t("wish.success")}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {t("wish.success_sub")}
+                      </p>
+                    </>
+                  )}
                 </motion.div>
               ) : (
                 <>
@@ -491,6 +515,7 @@ export default function RequestsPage() {
     "open" | "matched" | "fulfilled"
   >("open");
   const [addWishOpen, setAddWishOpen] = useState(false);
+  const [lastMatchedGames, setLastMatchedGames] = useState<InventoryMatch[]>([]);
   const [localWishes, setLocalWishes] = useState<CommunityWish[]>([]);
   // Wishes loaded from Supabase; falls back to MOCK_WISHES if query fails
   const [dbWishes, setDbWishes] = useState<CommunityWish[]>(MOCK_WISHES);
@@ -514,6 +539,9 @@ export default function RequestsPage() {
   ];
 
   function handleWishSuccess(wish: NewWishData) {
+    if (wish.matches && wish.matches.length > 0) {
+      setLastMatchedGames(wish.matches);
+    }
     // Prepend the new wish to the local list so it appears immediately
     const newWish: CommunityWish = {
       id: wish.id,
@@ -739,8 +767,9 @@ export default function RequestsPage() {
       {/* Add Wish Modal */}
       <AddWishModal
         isOpen={addWishOpen}
-        onClose={() => setAddWishOpen(false)}
+        onClose={() => { setAddWishOpen(false); setLastMatchedGames([]); }}
         onSuccess={handleWishSuccess}
+        matchedGames={lastMatchedGames}
       />
     </div>
   );

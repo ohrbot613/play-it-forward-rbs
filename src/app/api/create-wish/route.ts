@@ -4,7 +4,8 @@
  * Called when a user submits the "Add a Wish" modal on the requests page.
  * 1. Resolves the authenticated user's member profile (name + phone).
  * 2. Inserts a row into `community_wishes` table in Supabase (graceful if missing).
- * 3. Sends a WhatsApp notification to the org via Twilio.
+ * 3. Searches the `games` inventory for available matching titles (matching engine).
+ * 4. Sends a WhatsApp notification to the org via Twilio (with match info if found).
  *
  * Body: { gameTitle: string, notes?: string, neighborhood: string }
  */
@@ -110,6 +111,85 @@ async function insertCommunityWish(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Inventory matching engine (REC-43)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface InventoryMatch {
+  id: string;
+  title: string;
+  neighborhood: string;
+  holderName: string;
+}
+
+/**
+ * Search the `games` table for available games whose title contains any
+ * significant word from the wish title. Uses PostgREST `ilike` on each word
+ * so "Settlers of Catan" matches a game titled "Catan".
+ * Returns [] gracefully if Supabase is unconfigured or no matches found.
+ */
+async function findMatchingGames(gameTitle: string): Promise<InventoryMatch[]> {
+  const cfg = getSupabaseConfig();
+  if (!cfg) return [];
+
+  // Split title into words, filter out short/common words
+  const stopWords = new Set(["of", "the", "a", "an", "and", "in", "for", "to", "de"]);
+  const words = gameTitle
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9]/g, ""))
+    .filter((w) => w.length >= 3 && !stopWords.has(w));
+
+  if (words.length === 0) return [];
+
+  // Try each significant word — first match wins
+  for (const word of words) {
+    try {
+      const params = new URLSearchParams({
+        "title": `ilike.*${word}*`,
+        "is_available": "eq.true",
+        "select": "id,title,locations(neighborhood,holder:members!locations_current_holder_id_fkey(name,neighborhood))",
+        "limit": "3",
+      });
+
+      const res = await fetch(`${cfg.url}/rest/v1/games?${params}`, {
+        headers: {
+          apikey: cfg.key,
+          Authorization: `Bearer ${cfg.key}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!res.ok) continue;
+
+      const rows: Array<{
+        id: string;
+        title: string;
+        locations?: Array<{
+          neighborhood: string;
+          holder?: { name: string; neighborhood: string } | null;
+        }> | null;
+      }> = await res.json();
+
+      if (rows.length > 0) {
+        return rows.map((r) => {
+          const loc = r.locations?.[0];
+          return {
+            id: r.id,
+            title: r.title,
+            neighborhood: loc?.neighborhood ?? "Community",
+            holderName: loc?.holder?.name ?? "a community member",
+          };
+        });
+      }
+    } catch {
+      // Non-fatal — continue trying other words
+    }
+  }
+
+  return [];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // WhatsApp notifier (Twilio, mirrors whatsapp-lending pattern)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -180,21 +260,31 @@ export async function POST(req: NextRequest) {
     const requester = await getRequesterInfo();
 
     // 2. Insert into Supabase (graceful — table may not exist yet)
-    const inserted = await insertCommunityWish({
-      gameTitle,
-      notes,
-      neighborhood,
-      requesterId: requester.userId,
-      requesterName: requester.name,
-      requesterPhone: requester.phone,
-    });
+    // 3. Run inventory matching in parallel
+    const [inserted, matches] = await Promise.all([
+      insertCommunityWish({
+        gameTitle,
+        notes,
+        neighborhood,
+        requesterId: requester.userId,
+        requesterName: requester.name,
+        requesterPhone: requester.phone,
+      }),
+      findMatchingGames(gameTitle),
+    ]);
 
-    // 3. Send WhatsApp notification to org
+    // 4. Send WhatsApp notification to org (include match info if found)
     const orgPhone =
       process.env.ORG_WHATSAPP_NUMBER ?? process.env.TWILIO_WHATSAPP_FROM;
 
     const notesSuffix = notes?.trim() ? ` — ${notes.trim()}` : "";
-    const message = `✨ New wish from ${neighborhood}: ${gameTitle}${notesSuffix}`;
+    let message = `✨ New wish from ${neighborhood}: ${gameTitle}${notesSuffix}`;
+    if (matches.length > 0) {
+      const matchList = matches
+        .map((m) => `"${m.title}" held by ${m.holderName} (${m.neighborhood})`)
+        .join(", ");
+      message += `\n🎯 Inventory match found: ${matchList}`;
+    }
 
     if (orgPhone) {
       await sendWhatsApp(orgPhone, message);
@@ -205,6 +295,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       id: inserted?.id ?? null,
+      matches: matches.length > 0 ? matches : undefined,
       wish: {
         gameTitle,
         notes: notes ?? "",
