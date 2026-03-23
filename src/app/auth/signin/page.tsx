@@ -79,11 +79,12 @@ function SignInContent() {
   }
 
   const [totalGames, setTotalGames] = useState(MOCK_GAMES.length);
-  const totalFamilies = new Set(MOCK_GAMES.map((g) => g.ownerId)).size;
+  const [totalFamilies, setTotalFamilies] = useState(new Set(MOCK_GAMES.map((g) => g.ownerId)).size);
 
   useEffect(() => {
-    fetchGameStats().then(({ totalGames: liveCount }) => {
+    fetchGameStats().then(({ totalGames: liveCount, totalMembers }) => {
       if (liveCount > 0) setTotalGames(liveCount);
+      if (totalMembers > 0) setTotalFamilies(totalMembers);
     });
   }, []);
 
