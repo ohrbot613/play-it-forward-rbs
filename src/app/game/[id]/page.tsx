@@ -5,15 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { getGame, getUser, getCategoryEmoji, getCategoryLabel, formatDistance, COMPLEXITY_LABELS, RBS_CENTER } from "@/lib/data";
-import type { Review } from "@/lib/data";
+import type { Game, Review } from "@/lib/data";
 import { bestRelayRoute, type VolunteerCourier } from "@/lib/relay";
 import { Button } from "@/components/ui/button";
 import { RequestGameModal } from "@/components/request-game-modal";
 import { RelayRouteDisplay } from "@/components/relay-route-display";
-import { ArrowLeft, Users, MapPin, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand } from "lucide-react";
+import { ArrowLeft, Users, MapPin, MessageCircle, Share2, Repeat, Clock, Star, Timer, Brain, ThumbsUp, Hand, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
-import { fetchGameReviews, submitReview, insertLendingRequest, fetchGameRelays } from "@/lib/queries";
+import { fetchGame, fetchGameReviews, submitReview, insertLendingRequest, fetchGameRelays } from "@/lib/queries";
 import { createClient } from "@/lib/supabase";
 
 const fadeUp = {
@@ -25,7 +25,8 @@ export default function GameDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
   const router = useRouter();
-  const game = getGame(id);
+  const [game, setGame] = useState<Game | undefined>(getGame(id));
+  const [gameLoading, setGameLoading] = useState(!getGame(id));
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [localRequestCount, setLocalRequestCount] = useState(0);
   const { t, lang } = useLanguage();
@@ -49,7 +50,7 @@ export default function GameDetailPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadReviews() {
+    async function loadData() {
       setReviewsLoading(true);
       try {
         const supabase = createClient();
@@ -58,22 +59,26 @@ export default function GameDetailPage() {
           if (!cancelled) setIsLoggedIn(!!user);
         }
 
-        const [realReviews, realRelays] = await Promise.all([
+        const [dbGame, realReviews, realRelays] = await Promise.all([
+          fetchGame(id),
           fetchGameReviews(id),
           fetchGameRelays(id),
         ]);
         if (!cancelled) {
+          if (dbGame) setGame(dbGame);
+          setGameLoading(false);
           setReviews(realReviews);
           setRelayVolunteers(realRelays);
         }
       } catch (err) {
-        console.error("[game-detail] reviews load error:", err);
+        console.error("[game-detail] load error:", err);
+        if (!cancelled) setGameLoading(false);
       } finally {
         if (!cancelled) setReviewsLoading(false);
       }
     }
 
-    loadReviews();
+    loadData();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -107,6 +112,14 @@ export default function GameDetailPage() {
       setReviewError(result.error ?? "Something went wrong. Please try again.");
     }
     setReviewSubmitting(false);
+  }
+
+  if (gameLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!game) {
