@@ -110,9 +110,6 @@ export default function GameJourneyPage() {
       else if (!game) setGame(getGame(id) ?? null);
       if (realJourney.length > 0) {
         setJourney(realJourney);
-      } else if (realGame || game) {
-        const g = realGame ?? game!;
-        setJourney(getMockJourney(g.title, g.ownerId));
       }
       setLoading(false);
     }
@@ -141,6 +138,26 @@ export default function GameJourneyPage() {
       </div>
     );
   }
+  if (journey.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+          <span className="text-2xl">📖</span>
+        </div>
+        <p className="text-sm font-semibold mb-1">{game.title}</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          This game hasn&apos;t been borrowed yet — be the first!
+        </p>
+        <button
+          onClick={() => router.push(`/game/${id}`)}
+          className="px-6 py-2.5 rounded-full bg-primary text-white text-sm font-semibold elevation-2 hover:elevation-3 transition-all active:scale-[0.98]"
+        >
+          {t("journey.cta_button")}
+        </button>
+      </div>
+    );
+  }
+
   const totalFamilies = journey.filter(j => j.type === "borrowed" || j.type === "current").length;
   const totalWeeks = journey
     .filter(j => j.duration)
