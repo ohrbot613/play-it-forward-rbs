@@ -70,14 +70,6 @@ function SignInContent() {
     }
   };
 
-  if (checkingAuth) {
-    return (
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const [totalGames, setTotalGames] = useState(MOCK_GAMES.length);
   const [totalFamilies, setTotalFamilies] = useState(new Set(MOCK_GAMES.map((g) => g.ownerId)).size);
 
@@ -87,6 +79,14 @@ function SignInContent() {
       if (totalMembers > 0) setTotalFamilies(totalMembers);
     });
   }, []);
+
+  if (checkingAuth) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-between px-4 pt-12 pb-8">
