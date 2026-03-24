@@ -284,6 +284,12 @@ const translations = {
   // Game card
   "game.see_journey": { en: "See journey →", he: "ראה מסע ←" },
 
+  // Review form
+  "review.placeholder": { en: "Share your experience with this game...", he: "שתף את החוויה שלך עם המשחק הזה..." },
+  "review.submit": { en: "Submit Review", he: "שלח ביקורת" },
+  "review.submitting": { en: "Submitting...", he: "שולח..." },
+  "review.thanks": { en: "Thanks for your review!", he: "תודה על הביקורת!" },
+
   // Game Journey / Passport page
   "journey.page_title": { en: "Game Passport", he: "דרכון משחק" },
   "journey.page_subtitle": { en: "The journey of this game through our community", he: "המסע של המשחק הזה דרך הקהילה שלנו" },

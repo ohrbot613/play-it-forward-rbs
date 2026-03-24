@@ -456,7 +456,7 @@ export default function GameDetailPage() {
                     <textarea
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Share your experience with this game..."
+                      placeholder={t("review.placeholder")}
                       rows={3}
                       className="w-full rounded-xl bg-white border-0 elevation-1 p-3 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
@@ -470,7 +470,7 @@ export default function GameDetailPage() {
                       disabled={reviewSubmitting || reviewRating === 0 || !reviewComment.trim()}
                       className="w-full h-10 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                     >
-                      {reviewSubmitting ? "Submitting..." : "Submit Review"}
+                      {reviewSubmitting ? t("review.submitting") : t("review.submit")}
                     </button>
                   </form>
                 </div>
@@ -478,7 +478,7 @@ export default function GameDetailPage() {
 
               {isLoggedIn && reviewSuccess && (
                 <div className="rounded-2xl bg-emerald-50 p-4 text-center">
-                  <p className="text-sm font-medium text-emerald-700">Thanks for your review!</p>
+                  <p className="text-sm font-medium text-emerald-700">{t("review.thanks")}</p>
                 </div>
               )}
             </motion.div>
