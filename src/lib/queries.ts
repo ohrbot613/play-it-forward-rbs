@@ -9,6 +9,7 @@
 import { createClient } from "@/lib/supabase";
 import type { Game, UserProfile, Review, GameCategory, GameCondition, AgeGroup, Complexity, OwnershipType, CommunityWish, WishUrgency } from "@/lib/data";
 import type { VolunteerCourier } from "@/lib/relay";
+import { sendWhatsAppToLender } from "@/lib/notifications";
 
 // ─── DB row types ─────────────────────────────────────────────────────────
 
@@ -458,14 +459,27 @@ export async function insertLendingRequest(
   const supabase = createClient();
   if (!supabase) return { success: false, error: "Supabase not configured" };
 
-  // Look up the game owner to set as lender
+  // Look up the game owner (lender) — also fetch their phone and the game title
+  // so we can send them a WhatsApp notification after the request is saved.
   const { data: gameRow } = await supabase
     .from("games")
-    .select("owner_id")
+    .select(`
+      title,
+      owner_id,
+      owner:members!games_owner_id_fkey ( id, name, phone )
+    `)
     .eq("id", gameId)
     .single();
 
-  const lenderId = (gameRow as { owner_id: string | null } | null)?.owner_id ?? requesterId;
+  const gameData = gameRow as {
+    title: string;
+    owner_id: string | null;
+    owner: { id: string; name: string; phone: string | null } | null;
+  } | null;
+
+  const lenderId = gameData?.owner?.id ?? gameData?.owner_id ?? requesterId;
+  const gameTitle = gameData?.title ?? "a game";
+  const lenderPhone = gameData?.owner?.phone ?? null;
 
   const { error } = await supabase.from("lending_requests").insert({
     game_id: gameId,
@@ -481,6 +495,23 @@ export async function insertLendingRequest(
       console.error("[queries] insertLendingRequest error:", error.message);
     }
     return { success: false, error: error.message };
+  }
+
+  // Notify the lender via WhatsApp — non-blocking, never fails the request
+  if (lenderPhone) {
+    // Fetch the borrower's name for a friendlier message (best-effort)
+    const { data: borrowerRow } = await supabase
+      .from("members")
+      .select("name")
+      .eq("auth_user_id", requesterId)
+      .maybeSingle();
+
+    const borrowerName =
+      (borrowerRow as { name: string } | null)?.name ?? "A community member";
+
+    sendWhatsAppToLender(lenderPhone, gameTitle, borrowerName).catch((err) => {
+      console.error("[queries] WhatsApp notification failed (non-fatal):", err);
+    });
   }
 
   return { success: true };
