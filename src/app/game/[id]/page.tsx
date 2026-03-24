@@ -428,7 +428,7 @@ export default function GameDetailPage() {
               {/* Leave a Review form — only shown when logged in */}
               {isLoggedIn && !reviewSuccess && (
                 <div className="rounded-2xl bg-background p-4">
-                  <h3 className="text-sm font-semibold mb-3">Leave a Review</h3>
+                  <h3 className="text-sm font-semibold mb-3">{t("game.leave_a_review")}</h3>
                   <form onSubmit={handleReviewSubmit} className="space-y-3">
                     {/* Star Rating */}
                     <div className="flex items-center gap-1">

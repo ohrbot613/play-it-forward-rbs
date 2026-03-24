@@ -64,6 +64,7 @@ const translations = {
   "game.notify_help": { en: "Get notified when this game becomes available again", he: "קבל התראה כשהמשחק יהיה זמין שוב" },
   "game.currently_out": { en: "Currently Out", he: "מושאל כרגע" },
   "game.helpful": { en: "helpful", he: "מועיל" },
+  "game.leave_a_review": { en: "Leave a Review", he: "כתוב ביקורת" },
   "game.like_new": { en: "Like New", he: "כמו חדש" },
   "game.good": { en: "Good", he: "טוב" },
   "game.fair": { en: "Fair", he: "סביר" },
