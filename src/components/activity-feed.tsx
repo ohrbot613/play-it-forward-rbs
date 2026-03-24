@@ -161,7 +161,7 @@ export function ActivityFeed() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold tracking-tight">{t("activity.title")}</h2>
         <span className="text-2xs text-muted-foreground font-medium">
-          {isLive ? t("activity.live") : t("activity.live")}
+          {isLive ? t("activity.live") : t("activity.demo")}
         </span>
       </div>
 

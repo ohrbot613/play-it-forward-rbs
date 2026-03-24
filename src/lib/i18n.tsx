@@ -101,6 +101,7 @@ const translations = {
   // Activity feed
   "activity.title": { en: "Community Activity", he: "פעילות קהילתית" },
   "activity.live": { en: "Live feed", he: "עדכון חי" },
+  "activity.demo": { en: "Sample data", he: "נתוני דוגמה" },
 
   // Auth / Sign-in
   "auth.welcome": { en: "Welcome to Play it Forward", he: "ברוכים הבאים לשחק הלאה" },
