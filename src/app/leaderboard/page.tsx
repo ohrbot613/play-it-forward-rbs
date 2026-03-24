@@ -221,8 +221,8 @@ export default function LeaderboardPage() {
     : mockCouriers;
 
   const totalDeliveries = couriers.reduce((s, c) => s + c.totalDeliveries, 0);
-  const totalStreakDays = (mockCouriers as CourierProfile[]).reduce((s, c) => s + c.currentStreak, 0);
-  const totalBadges = (mockCouriers as CourierProfile[]).reduce((s, c) => s + c.badges.length, 0);
+  const totalStreakDays = couriers.reduce((s, c) => s + c.currentStreak, 0);
+  const totalBadges = couriers.reduce((s, c) => s + c.badges.length, 0);
 
   return (
     <div className="px-4 pb-24">
