@@ -238,7 +238,7 @@ export async function fetchGameReviews(gameId: string): Promise<Review[]> {
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, game_id, reviewer_id, rating, text, helpful, created_at")
+    .select("id, game_id, reviewer_id, rating, text, helpful, created_at, reviewer:members!reviews_reviewer_id_fkey (name)")
     .eq("game_id", gameId)
     .order("created_at", { ascending: false });
 
@@ -255,6 +255,7 @@ export async function fetchGameReviews(gameId: string): Promise<Review[]> {
     text: r.text ?? "",
     createdAt: r.created_at,
     helpful: r.helpful ?? 0,
+    reviewerName: r.reviewer?.name ?? undefined,
   }));
 }
 
@@ -351,6 +352,7 @@ interface DbReview {
   text: string | null;
   helpful: number | null;
   created_at: string;
+  reviewer?: { name: string } | null;
 }
 
 interface DbLendingRequest {

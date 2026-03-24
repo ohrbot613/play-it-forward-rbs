@@ -32,6 +32,8 @@ export interface Review {
   text: string;
   createdAt: string;
   helpful: number;
+  /** Reviewer display name — populated from Supabase join; absent for mock data */
+  reviewerName?: string;
 }
 
 export interface UserProfile {

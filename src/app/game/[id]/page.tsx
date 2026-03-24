@@ -393,9 +393,9 @@ export default function GameDetailPage() {
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xs">
-                                {(reviewer?.name ?? "U").charAt(0)}
+                                {(review.reviewerName ?? reviewer?.name ?? "U").charAt(0)}
                               </div>
-                              <span className="text-xs font-semibold">{reviewer?.name ?? "Community member"}</span>
+                              <span className="text-xs font-semibold">{review.reviewerName ?? reviewer?.name ?? "Community member"}</span>
                             </div>
                             <div className="flex items-center gap-0.5">
                               {Array.from({ length: 5 }).map((_, i) => (
