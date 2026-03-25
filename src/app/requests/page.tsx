@@ -80,7 +80,7 @@ function WishCard({ wish, index }: { wish: CommunityWish; index: number }) {
       if (wish.requesterPhone) {
         const phone = wish.requesterPhone.replace(/[^0-9]/g, "");
         const text = encodeURIComponent(
-          `Hi ${wish.requesterName}, I saw your request for ${wish.title} on Play it Forward — I have it! When would work for you?`
+          `היי ${wish.requesterName}, ראיתי את הבקשה שלך ל-${wish.title} ב-Play it Forward — יש לי אותו! מתי יתאים לך?`
         );
         window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
       }

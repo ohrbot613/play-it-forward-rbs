@@ -243,7 +243,7 @@ export default function DashboardPage() {
     // Open WhatsApp deep-link to coordinator confirming acceptance
     if (request) {
       const message = encodeURIComponent(
-        `Hi, I'd like to confirm that I've accepted the borrow request for "${request.gameTitle}" from ${request.requesterName}. Please coordinate the handoff. Request ID: ${id}`
+        `היי, אני רוצה לאשר שקיבלתי את בקשת ההשאלה עבור "${request.gameTitle}" מ-${request.requesterName}. אנא תאם את העברת המשחק. מזהה בקשה: ${id}`
       );
       window.open(`https://wa.me/${COORDINATOR_PHONE}?text=${message}`, "_blank");
     }

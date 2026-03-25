@@ -1818,9 +1818,9 @@ export function getCategoryEmoji(cat: GameCategory): string {
 }
 
 export function formatWhatsAppLink(phone: string, gameTitle: string, requesterName?: string): string {
-  const name = requesterName ? ` My name is ${requesterName}.` : "";
+  const name = requesterName ? ` שמי ${requesterName}.` : "";
   const text = encodeURIComponent(
-    `Hi! I saw "${gameTitle}" on Play it Forward and I'd love to borrow it.${name} Is it still available? When would be a good time to pick it up?`
+    `היי! ראיתי את "${gameTitle}" ב-Play it Forward ואשמח לשאול אותו.${name} האם הוא עדיין זמין? מתי יהיה נוח לאסוף?`
   );
   return `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${text}`;
 }
@@ -1892,9 +1892,9 @@ export function getAvailableGames(): Game[] {
 }
 
 export function formatWhatsAppRequest(phone: string, gameTitle: string, requesterName: string, ownershipType: OwnershipType): string {
-  const typeText = ownershipType === "lent" ? "borrow" : "pick up";
+  const typeText = ownershipType === "lent" ? "לשאול" : "לאסוף";
   const text = encodeURIComponent(
-    `Hi! I'm ${requesterName} from Play it Forward. I'd love to ${typeText} "${gameTitle}". Is it available? When works for pickup?`
+    `היי! אני ${requesterName} מ-Play it Forward. אשמח ${typeText} את "${gameTitle}". האם זמין? מתי אפשר לאסוף?`
   );
   return `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${text}`;
 }

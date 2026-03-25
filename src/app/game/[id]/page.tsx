@@ -145,10 +145,10 @@ export default function GameDetailPage() {
 
   const COORDINATOR_PHONE = process.env.NEXT_PUBLIC_COORDINATOR_PHONE || "972544444444";
   const coordinatorRequestUrl = `https://wa.me/${COORDINATOR_PHONE}?text=${encodeURIComponent(
-    `Hi, I'd like to borrow ${game.title} (ID: ${game.id}). Please coordinate with the owner on my behalf.`
+    `היי, אני רוצה לשאול את ${game.title} (מזהה: ${game.id}). אשמח אם תתאם עם הבעלים בשמי.`
   )}`;
   const coordinatorWaitlistUrl = `https://wa.me/${COORDINATOR_PHONE}?text=${encodeURIComponent(
-    `Hi, I'd like to join the waitlist for ${game.title} (ID: ${game.id}). Please let me know when it becomes available.`
+    `היי, אני רוצה להצטרף לרשימת ההמתנה ל-${game.title} (מזהה: ${game.id}). אנא הודע לי כשהמשחק יהיה זמין.`
   )}`;
   const owner = getUser(game.ownerId);
   const condition = conditionKeys[game.condition];

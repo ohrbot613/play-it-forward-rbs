@@ -34,10 +34,10 @@ function timeAgo(timestamp: string): string {
   const diffHr = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHr / 24);
 
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay === 1) return "Yesterday";
-  return `${diffDay}d ago`;
+  if (diffMin < 60) return `לפני ${diffMin} דק׳`;
+  if (diffHr < 24) return `לפני ${diffHr} ש׳`;
+  if (diffDay === 1) return "אתמול";
+  return `לפני ${diffDay} ימים`;
 }
 
 /** Pick a first-name initial from a full name. E.g. "Miriam Katz" → "Miriam K." */
