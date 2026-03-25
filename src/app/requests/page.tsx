@@ -517,18 +517,24 @@ export default function RequestsPage() {
   const [addWishOpen, setAddWishOpen] = useState(false);
   const [lastMatchedGames, setLastMatchedGames] = useState<InventoryMatch[]>([]);
   const [localWishes, setLocalWishes] = useState<CommunityWish[]>([]);
-  // Wishes loaded from Supabase; falls back to MOCK_WISHES if query fails
-  const [dbWishes, setDbWishes] = useState<CommunityWish[]>(MOCK_WISHES);
+  // Wishes loaded from Supabase; falls back to MOCK_WISHES only after load completes
+  const [dbWishes, setDbWishes] = useState<CommunityWish[]>([]);
+  const [wishesLoading, setWishesLoading] = useState(true);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
+    setWishesLoading(true);
     fetchCommunityWishes()
       .then((rows) => {
-        // Only replace mock data if we actually got rows back
-        if (rows.length > 0) setDbWishes(rows);
+        // Use real rows if available, otherwise fall back to mock data
+        setDbWishes(rows.length > 0 ? rows : MOCK_WISHES);
       })
       .catch(() => {
-        // Leave MOCK_WISHES in place on network/DB error
+        // Network/DB error — fall back to mock data
+        setDbWishes(MOCK_WISHES);
+      })
+      .finally(() => {
+        setWishesLoading(false);
       });
   }, []);
 
@@ -730,19 +736,27 @@ export default function RequestsPage() {
 
       {/* Results count */}
       <div className="mb-3 text-xs text-muted-foreground">
-        {wishes.length} {wishes.length === 1 ? t("wishes.wish") : t("wishes.wishes_count")}
+        {wishesLoading ? "..." : `${wishes.length} ${wishes.length === 1 ? t("wishes.wish") : t("wishes.wishes_count")}`}
       </div>
 
       {/* Wish Cards */}
-      <div className="flex flex-col gap-3 pb-4">
-        {wishes.map((wish, i) => (
-          <WishCard key={wish.id} wish={wish} index={i} />
-        ))}
-      </div>
+      {wishesLoading ? (
+        <div className="flex flex-col gap-3 pb-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-36 rounded-2xl bg-white elevation-1 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 pb-4">
+          {wishes.map((wish, i) => (
+            <WishCard key={wish.id} wish={wish} index={i} />
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
       <AnimatePresence>
-        {wishes.length === 0 && (
+        {!wishesLoading && wishes.length === 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

@@ -50,8 +50,9 @@ import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
-// Demo/mock user shown when Supabase auth is not configured
-const DEMO_USER_ID = "u1";
+// Demo/mock user shown only when Supabase auth is not configured (dev/offline mode)
+// This ID is never used in production — demoMode is false whenever Supabase is available
+const DEMO_USER_ID = process.env.NODE_ENV !== "production" ? "u1" : null;
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -122,12 +123,9 @@ export default function ProfilePage() {
 
     (async () => {
       try {
-        const [member, games] = await Promise.all([
-          fetchCurrentMember(),
-          // fetchMemberGames needs a member ID from the members table —
-          // we get that from fetchCurrentMember result
-          fetchCurrentMember().then((m) => (m ? fetchMemberGames(m.id) : [])),
-        ]);
+        // Fetch member once, then use it to fetch games — avoids duplicate DB call
+        const member = await fetchCurrentMember();
+        const games = member ? await fetchMemberGames(member.id) : [];
 
         if (cancelled) return;
 
@@ -209,7 +207,7 @@ export default function ProfilePage() {
     }
   };
 
-  const demoProfile = MOCK_USERS.find((u) => u.id === DEMO_USER_ID);
+  const demoProfile = DEMO_USER_ID ? MOCK_USERS.find((u) => u.id === DEMO_USER_ID) : undefined;
 
   const recommendations = useMemo(() => {
     if (!user && !demoMode) return [];
@@ -246,7 +244,7 @@ export default function ProfilePage() {
 
   // myGames: real data when logged in, mock data in demo mode, empty while loading
   const myGames = demoMode
-    ? MOCK_GAMES.filter((g) => g.ownerId === DEMO_USER_ID).slice(0, 3)
+    ? MOCK_GAMES.filter((g) => DEMO_USER_ID && g.ownerId === DEMO_USER_ID).slice(0, 3)
     : dataLoading
       ? []
       : myGamesReal.slice(0, 10);
