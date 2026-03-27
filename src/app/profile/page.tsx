@@ -21,6 +21,7 @@ import {
   fetchMemberGames,
   fetchBorrowHistory,
   fetchLendHistory,
+  fetchPendingRequestCount,
   type LendingRequest,
 } from "@/lib/queries";
 import type { UserProfile } from "@/lib/data";
@@ -41,6 +42,8 @@ import {
   Share2,
   Copy,
   Check,
+  LayoutDashboard,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -78,6 +81,7 @@ export default function ProfilePage() {
   const [borrowHistory, setBorrowHistory] = useState<LendingRequest[]>([]);
   const [lendHistory, setLendHistory] = useState<LendingRequest[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const router = useRouter();
   const { t } = useLanguage();
@@ -123,8 +127,12 @@ export default function ProfilePage() {
 
     (async () => {
       try {
-        // Fetch member once, then use it to fetch games — avoids duplicate DB call
-        const member = await fetchCurrentMember();
+        // Fetch member + pending count in parallel — avoids duplicate DB call
+        const [member, pending] = await Promise.all([
+          fetchCurrentMember(),
+          fetchPendingRequestCount(),
+        ]);
+        if (!cancelled) setPendingCount(pending);
         const games = member ? await fetchMemberGames(member.id) : [];
 
         if (cancelled) return;
@@ -324,15 +332,50 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
+      {/* Quick Access — Dashboard + Leaderboard */}
+      <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="mb-6 space-y-2.5">
+        <Link href="/dashboard">
+          <div className="flex items-center gap-3 rounded-2xl bg-white elevation-1 p-4 hover:elevation-2 transition-shadow">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <LayoutDashboard className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold">{t("profile.my_dashboard")}</h3>
+              <p className="text-2xs text-muted-foreground">{t("profile.dashboard_sub")}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {pendingCount > 0 && (
+                <span className="min-w-[20px] h-5 flex items-center justify-center rounded-full bg-coral text-white text-2xs font-bold px-1.5">
+                  {t("profile.pending_requests", { count: pendingCount })}
+                </span>
+              )}
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+        </Link>
+        <Link href="/leaderboard">
+          <div className="flex items-center gap-3 rounded-2xl bg-white elevation-1 p-4 hover:elevation-2 transition-shadow">
+            <div className="h-10 w-10 rounded-xl bg-sunshine/10 flex items-center justify-center shrink-0">
+              <Trophy className="h-5 w-5 text-sunshine" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold">{t("profile.community_heroes")}</h3>
+              <p className="text-2xs text-muted-foreground">{t("profile.heroes_sub")}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </div>
+        </Link>
+      </motion.div>
+
       {/* Share PIF — Referral Card */}
       <motion.div {...fadeUp} transition={{ delay: 0.17 }} className="mb-6">
         <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-sunshine/10 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Share2 className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Share Play it Forward</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t("profile.share_pif")}</h2>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            I&apos;m lending board games in my neighborhood — join me!
+            {t("profile.share_pif_sub")}
           </p>
           {(demoMode ? demoProfile?.referralCode : dbMember?.referralCode) && (
             <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-white rounded-xl elevation-1">
@@ -352,12 +395,12 @@ export default function ProfilePage() {
             {copySuccess ? (
               <>
                 <Check className="h-4 w-4" />
-                Link copied!
+                {t("profile.link_copied")}
               </>
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                Copy invite link
+                {t("profile.copy_link")}
               </>
             )}
           </button>

@@ -1037,6 +1037,42 @@ export async function fetchGameStats(): Promise<{ totalGames: number; totalShare
 
 // ─── Relay Volunteer ───────────────────────────────────────────────────────
 
+// ─── Pending Request Count (for nav badge) ──────────────────────────────
+
+/**
+ * Fetch the number of pending lending offers for the current user.
+ * Used to show a badge on the Profile nav icon.
+ * Returns 0 gracefully if not logged in or table missing.
+ */
+export async function fetchPendingRequestCount(): Promise<number> {
+  const supabase = createClient();
+  if (!supabase) return 0;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    // Check lending_offers where user is the lender and status is pending
+    const { count, error } = await supabase
+      .from("lending_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("lender_auth_user_id", user.id)
+      .eq("status", "pending");
+
+    if (error) {
+      // Table may not exist yet
+      if (error.code !== "42P01") {
+        console.error("[queries] fetchPendingRequestCount error:", error.message);
+      }
+      return 0;
+    }
+
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export interface RelaySignupData {
   fromNeighborhood: string;
   toNeighborhood: string;

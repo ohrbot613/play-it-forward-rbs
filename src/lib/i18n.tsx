@@ -356,6 +356,17 @@ const translations = {
   "badge.community-hero": { en: "Community Hero", he: "גיבור הקהילה" },
   "badge.speed-demon": { en: "Speed Demon", he: "מהיר כברק" },
   "badge.cross-neighborhood": { en: "Cross-Neighborhood", he: "חוצה שכונות" },
+
+  // Profile quick-access links
+  "profile.my_dashboard": { en: "My Dashboard", he: "לוח הבקרה שלי" },
+  "profile.dashboard_sub": { en: "Manage requests, loans & inventory", he: "ניהול בקשות, השאלות ומלאי" },
+  "profile.community_heroes": { en: "Community Heroes", he: "גיבורי הקהילה" },
+  "profile.heroes_sub": { en: "Leaderboard & courier badges", he: "טבלת מובילים ותגי שליחים" },
+  "profile.pending_requests": { en: "{count} pending", he: "{count} ממתינות" },
+  "profile.share_pif": { en: "Share Play it Forward", he: "שתף את שחק הלאה" },
+  "profile.share_pif_sub": { en: "I'm lending board games in my neighborhood — join me!", he: "אני משאיל/ה משחקי קופסה בשכונה — בוא/י!" },
+  "profile.copy_link": { en: "Copy invite link", he: "העתק קישור הזמנה" },
+  "profile.link_copied": { en: "Link copied!", he: "הקישור הועתק!" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
