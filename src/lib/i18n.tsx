@@ -23,6 +23,8 @@ const translations = {
   "neighborhood.rbs_aleph": { en: "RBS Aleph", he: "א׳" },
   "neighborhood.rbs_bet": { en: "RBS Bet", he: "ב׳" },
   "neighborhood.rbs_gimmel": { en: "RBS Gimmel", he: "ג׳" },
+  "neighborhood.rbs_dalet": { en: "RBS Dalet", he: "ד׳" },
+  "neighborhood.rbs_hey": { en: "RBS Hey", he: "ה׳" },
   "neighborhood.old_bs": { en: "Old BS", he: "בית שמש" },
 
   // Filters
@@ -372,6 +374,15 @@ const translations = {
   "relay.day.wed": { en: "Wed", he: "ד׳" },
   "relay.day.thu": { en: "Thu", he: "ה׳" },
   "relay.day.fri": { en: "Fri", he: "ו׳" },
+
+  // Relay route display (game detail page)
+  "relay.route.delivery_route": { en: "Delivery route", he: "מסלול משלוח" },
+  "relay.route.direct": { en: "Direct pickup", he: "איסוף ישיר" },
+  "relay.route.single": { en: "1 volunteer relay", he: "שליח אחד" },
+  "relay.route.double": { en: "2 volunteer relay", he: "שני שליחים" },
+  "relay.route.via": { en: "via", he: "דרך" },
+  "relay.route.game_holder": { en: "Game holder", he: "מחזיק המשחק" },
+  "relay.route.requester": { en: "Requester", he: "המבקש" },
 
   // Badge names (bilingual)
   "badge.first-delivery": { en: "First Delivery", he: "משלוח ראשון" },

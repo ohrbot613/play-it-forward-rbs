@@ -1,6 +1,7 @@
 "use client";
 
 import { RelayRoute } from "@/lib/relay";
+import { useLanguage } from "@/lib/i18n";
 import { ArrowDown, User, MapPin } from "lucide-react";
 
 interface RelayRouteDisplayProps {
@@ -8,18 +9,20 @@ interface RelayRouteDisplayProps {
 }
 
 export function RelayRouteDisplay({ route }: RelayRouteDisplayProps) {
+  const { t } = useLanguage();
+
   const typeLabel =
     route.type === "direct"
-      ? "Direct pickup"
+      ? t("relay.route.direct")
       : route.type === "single-relay"
-      ? "1 volunteer relay"
-      : "2 volunteer relay";
+      ? t("relay.route.single")
+      : t("relay.route.double");
 
   return (
     <div className="rounded-2xl bg-background p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <span className="text-2xs text-muted-foreground font-medium uppercase tracking-wider">
-          Delivery route
+          {t("relay.route.delivery_route")}
         </span>
         <span className="text-2xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
           {typeLabel} · {route.totalDistanceKm.toFixed(1)} km
@@ -35,7 +38,9 @@ export function RelayRouteDisplay({ route }: RelayRouteDisplayProps) {
                 <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <MapPin className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <span className="text-xs font-semibold">{leg.from.label}</span>
+                <span className="text-xs font-semibold">
+                  {leg.from.label === "Game holder" ? t("relay.route.game_holder") : leg.from.label}
+                </span>
               </div>
             )}
 
@@ -44,7 +49,7 @@ export function RelayRouteDisplay({ route }: RelayRouteDisplayProps) {
               <ArrowDown className="h-3 w-3 text-muted-foreground/50 shrink-0" />
               <span className="text-2xs text-muted-foreground">
                 {leg.distanceKm.toFixed(1)} km
-                {leg.volunteerName ? ` via ${leg.volunteerName}` : ""}
+                {leg.volunteerName ? ` ${t("relay.route.via")} ${leg.volunteerName}` : ""}
               </span>
             </div>
 
@@ -59,7 +64,9 @@ export function RelayRouteDisplay({ route }: RelayRouteDisplayProps) {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-semibold">{leg.to.label}</span>
+              <span className="text-xs font-semibold">
+                {leg.to.label === "Requester" ? t("relay.route.requester") : leg.to.label}
+              </span>
             </div>
           </div>
         ))}

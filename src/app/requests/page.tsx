@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CATEGORIES,
+  NEIGHBORHOODS,
   URGENCY_CONFIG,
   getCategoryEmoji,
   type GameCategory,
@@ -37,7 +38,6 @@ import { useLanguage } from "@/lib/i18n";
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const NEIGHBORHOODS = ["RBS Aleph", "RBS Bet", "RBS Gimmel", "Old Beit Shemesh"] as const;
 type Neighborhood = (typeof NEIGHBORHOODS)[number];
 
 // ─────────────────────────────────────────────────────────────────────────────

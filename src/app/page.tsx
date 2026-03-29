@@ -25,6 +25,8 @@ const NEIGHBORHOOD_KEYS: Record<string, string> = {
   "RBS Aleph": "neighborhood.rbs_aleph",
   "RBS Bet": "neighborhood.rbs_bet",
   "RBS Gimmel": "neighborhood.rbs_gimmel",
+  "RBS Dalet": "neighborhood.rbs_dalet",
+  "RBS Hey": "neighborhood.rbs_hey",
   "Old Beit Shemesh": "neighborhood.old_bs",
 };
 

@@ -15,6 +15,7 @@ const NEIGHBORHOOD_COLORS: Record<string, { bg: string; text: string; dot: strin
   "RBS Bet": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
   "RBS Gimmel": { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400" },
   "RBS Dalet": { bg: "bg-purple-50", text: "text-purple-700", dot: "bg-purple-400" },
+  "RBS Hey": { bg: "bg-teal-50", text: "text-teal-700", dot: "bg-teal-400" },
   "Old Beit Shemesh": { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-400" },
 };
 

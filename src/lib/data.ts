@@ -156,7 +156,7 @@ export const COMPLEXITY_LABELS: Record<Complexity, string> = {
   heavy: "Complex",
 };
 
-export const NEIGHBORHOODS = ["RBS Aleph", "RBS Bet", "RBS Gimmel", "Old Beit Shemesh"] as const;
+export const NEIGHBORHOODS = ["RBS Aleph", "RBS Bet", "RBS Gimmel", "RBS Dalet", "RBS Hey", "Old Beit Shemesh"] as const;
 
 export const CITIES: { value: string; label: string }[] = [
   { value: "rbs", label: "Ramat Beit Shemesh" },
