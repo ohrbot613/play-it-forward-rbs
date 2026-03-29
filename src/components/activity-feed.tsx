@@ -60,70 +60,70 @@ function buildFallbackActivity(): ActivityItem[] {
     {
       id: "act-1",
       type: "game-shared",
-      message: `${shortName(u(0).name)} shared ${g(0).title} with ${shortName(u(1).name)}`,
+      message: `${shortName(u(0).name)} שיתף את ${g(0).title} עם ${shortName(u(1).name)} / shared with ${shortName(u(1).name)}`,
       timestamp: hoursBack(2),
       neighborhood: u(0).neighborhood,
     },
     {
       id: "act-2",
       type: "new-member",
-      message: `${shortName(u(2).name)} joined Play it Forward from ${u(2).neighborhood}`,
+      message: `${shortName(u(2).name)} הצטרף מ${u(2).neighborhood} / joined from ${u(2).neighborhood}`,
       timestamp: hoursBack(5),
       neighborhood: u(2).neighborhood,
     },
     {
       id: "act-3",
       type: "game-added",
-      message: `${shortName(u(3).name)} added ${g(3).title} to the catalog`,
+      message: `${shortName(u(3).name)} הוסיף את ${g(3).title} לקטלוג / added to the catalog`,
       timestamp: hoursBack(18),
       neighborhood: u(3).neighborhood,
     },
     {
       id: "act-4",
       type: "request-fulfilled",
-      message: `${g(4).title} request fulfilled for ${shortName(u(4).name)}`,
+      message: `${g(4).title} הושאל ל${shortName(u(4).name)} / lent to ${shortName(u(4).name)}`,
       timestamp: hoursBack(26),
       neighborhood: u(4).neighborhood,
     },
     {
       id: "act-5",
       type: "game-donated",
-      message: `${shortName(u(5 % users.length).name)} donated ${g(5).title} to the community library`,
+      message: `${shortName(u(5 % users.length).name)} תרם את ${g(5).title} לספרייה / donated to the library`,
       timestamp: hoursBack(34),
       neighborhood: u(5 % users.length).neighborhood,
     },
     {
       id: "act-6",
       type: "review",
-      message: `${shortName(u(1).name)} left a 5-star review for ${g(6).title}`,
+      message: `${shortName(u(1).name)} דירג 5★ את ${g(6).title} / gave 5 stars`,
       timestamp: hoursBack(42),
       neighborhood: u(1).neighborhood,
     },
     {
       id: "act-7",
       type: "request",
-      message: `${g(7).requestCount + 1} people requested ${g(7).title} this week`,
+      message: `${g(7).requestCount + 1} משפחות מחפשות את ${g(7).title} / families want this`,
       timestamp: hoursBack(55),
       neighborhood: u(2).neighborhood,
     },
     {
       id: "act-8",
       type: "new-member",
-      message: `${shortName(u(4 % users.length).name)} joined from ${u(4 % users.length).neighborhood}`,
+      message: `${shortName(u(4 % users.length).name)} הצטרף מ${u(4 % users.length).neighborhood} / joined the community`,
       timestamp: hoursBack(68),
       neighborhood: u(4 % users.length).neighborhood,
     },
     {
       id: "act-9",
       type: "game-shared",
-      message: `${shortName(u(0).name)} shared ${g(8).title} with a neighbour`,
+      message: `${shortName(u(0).name)} שיתף את ${g(8).title} עם שכן / shared with a neighbour`,
       timestamp: hoursBack(80),
       neighborhood: u(0).neighborhood,
     },
     {
       id: "act-10",
       type: "milestone",
-      message: `Community hit ${Math.max(200, MOCK_GAMES.reduce((sum, game) => sum + game.handoffs, 0))} total shares!`,
+      message: `הקהילה הגיעה ל-${Math.max(200, MOCK_GAMES.reduce((sum, game) => sum + game.handoffs, 0))} שיתופים! / community milestone reached!`,
       timestamp: hoursBack(96),
       neighborhood: "All",
     },
@@ -131,7 +131,7 @@ function buildFallbackActivity(): ActivityItem[] {
 }
 
 export function ActivityFeed() {
-  const { t } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const fallback = useMemo(buildFallbackActivity, []);
 
   const [activity, setActivity] = useState<ActivityItem[]>(fallback);
@@ -166,7 +166,7 @@ export function ActivityFeed() {
         </span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5" dir={dir}>
         {activity.map((item, i) => {
           const config = ACTIVITY_ICONS[item.type];
           const Icon = config.icon;
@@ -174,7 +174,7 @@ export function ActivityFeed() {
           return (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, x: -8 }}
+              initial={{ opacity: 0, x: dir === "rtl" ? 8 : -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.05 * i }}
               className="flex items-start gap-3 rounded-2xl bg-white p-3.5 elevation-1"
@@ -183,7 +183,7 @@ export function ActivityFeed() {
                 <Icon className={cn("h-4 w-4", config.color)} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm leading-snug">{item.message}</p>
+                <p className="text-sm leading-snug" dir="auto">{item.message}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-2xs text-muted-foreground">{timeAgo(item.timestamp, t)}</span>
                   <span className="text-2xs text-border">·</span>

@@ -758,8 +758,8 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
           id: `game-${row.id}`,
           type: isDonated ? "game-donated" : "game-added",
           message: isDonated
-            ? `${shortName(ownerName)} donated ${row.title} to the community library`
-            : `${shortName(ownerName)} added ${row.title} to the catalog`,
+            ? `${shortName(ownerName)} תרם את ${row.title} לספרייה / donated ${row.title} to the library`
+            : `${shortName(ownerName)} הוסיף את ${row.title} לקטלוג / added ${row.title} to the catalog`,
           timestamp: row.listed_at,
           neighborhood,
         });
@@ -784,7 +784,7 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
         items.push({
           id: `member-${row.id}`,
           type: "new-member",
-          message: `${shortName(row.name)} joined Play it Forward from ${row.neighborhood}`,
+          message: `${shortName(row.name)} הצטרף מ${row.neighborhood} / joined from ${row.neighborhood}`,
           timestamp: row.created_at,
           neighborhood: row.neighborhood,
         });
@@ -818,7 +818,7 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
         items.push({
           id: `loan-${row.id}`,
           type: "request-fulfilled",
-          message: `${gameTitle} was shared with ${shortName(borrowerName)}`,
+          message: `${gameTitle} הושאל ל${shortName(borrowerName)} / shared with ${shortName(borrowerName)}`,
           timestamp: row.completed_at,
           neighborhood,
         });
@@ -851,7 +851,7 @@ export async function getRecentActivity(limit = 10): Promise<ActivityItem[]> {
         items.push({
           id: `review-${row.id}`,
           type: "review",
-          message: `${shortName(reviewerName)} left a ${row.rating}-star review for ${gameTitle}`,
+          message: `${shortName(reviewerName)} דירג ${row.rating}★ את ${gameTitle} / gave ${gameTitle} ${row.rating} stars`,
           timestamp: row.created_at,
           neighborhood,
         });
