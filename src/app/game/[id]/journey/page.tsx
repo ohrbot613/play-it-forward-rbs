@@ -86,7 +86,7 @@ export default function GameJourneyPage() {
         </div>
         <p className="text-sm font-semibold mb-1">{game.title}</p>
         <p className="text-sm text-muted-foreground mb-4">
-          This game hasn&apos;t been borrowed yet — be the first!
+          {t("journey.no_borrows_yet")}
         </p>
         <button
           onClick={() => router.push(`/game/${id}`)}

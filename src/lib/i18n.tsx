@@ -304,6 +304,7 @@ const translations = {
   "journey.cta_button": { en: "Request this game", he: "בקש את המשחק" },
   "journey.not_found": { en: "Game not found", he: "משחק לא נמצא" },
   "journey.back_to_games": { en: "Back to games", he: "חזרה למשחקים" },
+  "journey.no_borrows_yet": { en: "This game hasn't been borrowed yet — be the first!", he: "המשחק הזה עדיין לא הושאל — היה הראשון!" },
 
   // Leaderboard / Gamification
   "nav.leaderboard": { en: "Leaders", he: "מובילים" },

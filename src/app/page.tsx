@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
 import { CATEGORIES, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
 import { fetchGames, fetchGameStats } from "@/lib/queries";
-import { Search, X, ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import { Search, X, ChevronDown, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ActivityFeed } from "@/components/activity-feed";
 import { useLanguage } from "@/lib/i18n";
@@ -265,25 +266,30 @@ export default function HomePage() {
 
       {/* Game Grid */}
       <div className="grid grid-cols-2 gap-3 pb-4">
-        {games.map((game, i) => (
-          <GameCard key={game.id} game={game} index={i} />
-        ))}
+        {gamesLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden bg-white elevation-2">
+                <Skeleton className="h-40 w-full rounded-none" />
+                <div className="p-3.5 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <div className="flex gap-3 pt-1">
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-3 w-10" />
+                  </div>
+                </div>
+              </div>
+            ))
+          : games.map((game, i) => (
+              <GameCard key={game.id} game={game} index={i} />
+            ))}
       </div>
 
       {/* Activity Feed */}
       <ActivityFeed />
 
       <AnimatePresence>
-        {gamesLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="mt-16 flex justify-center pb-8"
-          >
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </motion.div>
-        )}
         {!gamesLoading && games.length === 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
