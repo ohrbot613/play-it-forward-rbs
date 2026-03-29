@@ -109,7 +109,7 @@ export default function GameDetailPage() {
       const updated = await fetchGameReviews(id);
       setReviews(updated);
     } else {
-      setReviewError(result.error ?? "Something went wrong. Please try again.");
+      setReviewError(result.error ?? t("wish.error"));
     }
     setReviewSubmitting(false);
   }

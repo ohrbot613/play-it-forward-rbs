@@ -442,7 +442,7 @@ export default function ProfilePage() {
                     key={age}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-2xs font-medium"
                   >
-                    {age} yrs
+                    {age} {t("profile.yrs")}
                     <button onClick={() => removeAge(age)}>
                       <X className="h-3 w-3" />
                     </button>
@@ -451,7 +451,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Age"
+                  placeholder={t("profile.age_placeholder")}
                   type="number"
                   min="1"
                   max="18"

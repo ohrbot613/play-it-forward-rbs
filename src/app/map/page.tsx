@@ -665,8 +665,8 @@ export default function MapPage() {
                       )}
                     >
                       {selectedGame.ownershipType === "lent"
-                        ? "On Loan"
-                        : "Community Game"}
+                        ? t("game.on_loan")
+                        : t("game.community_game")}
                     </span>
                   </div>
                 </div>

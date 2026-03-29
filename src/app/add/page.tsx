@@ -40,6 +40,20 @@ type GameType = typeof GAME_CATEGORIES[number];
 const AGE_RANGES = ["3+", "5+", "7+", "10+", "12+", "14+", "18+", "All Ages"] as const;
 type AgeRange = typeof AGE_RANGES[number];
 
+// Bilingual labels for GAME_CATEGORIES (used in the form dropdown)
+const GAME_CATEGORY_LABELS: Record<GameType, { en: string; he: string }> = {
+  Strategy:    { en: "Strategy",    he: "אסטרטגיה" },
+  Family:      { en: "Family",      he: "משפחה" },
+  Party:       { en: "Party",       he: "מסיבה" },
+  Educational: { en: "Educational", he: "חינוכי" },
+  Cooperative: { en: "Cooperative", he: "שיתופי" },
+  Puzzle:      { en: "Puzzle",      he: "פאזל" },
+  "Card Game": { en: "Card Game",   he: "משחק קלפים" },
+  Abstract:    { en: "Abstract",    he: "אבסטרקטי" },
+  Trivia:      { en: "Trivia",      he: "טריוויה" },
+  Other:       { en: "Other",       he: "אחר" },
+};
+
 // Map AI-returned originalCategory to our GameType
 const AI_CATEGORY_TO_GAME_TYPE: Record<string, GameType> = {
   Strategy: "Strategy",
@@ -200,7 +214,7 @@ export default function AddGamePage() {
     const isFirstPhoto = photos.length === 0;
     Array.from(files).forEach((file, i) => {
       if (file.size > MAX_FILE_BYTES) {
-        setAiToast(lang === "he" ? "התמונה גדולה מדי. אנא השתמש בתמונה מתחת ל-2MB." : "Photo too large. Please use a photo under 2MB.");
+        setAiToast(t("add.photo_too_large"));
         return;
       }
       const reader = new FileReader();
@@ -313,7 +327,7 @@ export default function AddGamePage() {
 
       if (error) {
         console.error("Supabase insert failed:", error.message);
-        setSubmitError(lang === "he" ? "שגיאה בשמירת המשחק. נסה שוב." : "Failed to save game. Please try again.");
+        setSubmitError(t("add.save_error"));
         setStep("photos");
         return;
       }
@@ -321,7 +335,7 @@ export default function AddGamePage() {
       setStep("done");
     } catch (err) {
       console.error("Could not save to database:", err);
-      setSubmitError(lang === "he" ? "שגיאה בשמירת המשחק. נסה שוב." : "Failed to save game. Please try again.");
+      setSubmitError(t("add.save_error"));
       setStep("photos");
     }
   };
@@ -375,7 +389,7 @@ export default function AddGamePage() {
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
         <p className="text-sm text-muted-foreground">
-          {lang === "he" ? "שומר את המשחק..." : "Saving your game..."}
+          {t("add.saving")}
         </p>
       </div>
     );
@@ -618,7 +632,7 @@ export default function AddGamePage() {
           >
             <option value="">{t("add.category_select_placeholder")}</option>
             {GAME_CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>{GAME_CATEGORY_LABELS[c][lang]}</option>
             ))}
           </select>
         </div>

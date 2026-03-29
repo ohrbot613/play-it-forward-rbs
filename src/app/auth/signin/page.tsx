@@ -130,9 +130,9 @@ function SignInContent() {
           className="space-y-3 mb-8"
         >
           {[
-            { icon: Dice5, text: lang === "he" ? "שתף ושאל משחקים מהשכנים" : "Share & borrow games from neighbors" },
-            { icon: Users, text: lang === "he" ? "רשת שכנים מבוססת אמון" : "Trust-based neighborhood network" },
-            { icon: Heart, text: lang === "he" ? "חינמי לגמרי — הקהילה מנהלת" : "Completely free — community-run" },
+            { icon: Dice5, text: t("auth.feature_share") },
+            { icon: Users, text: t("auth.feature_trust") },
+            { icon: Heart, text: t("auth.feature_free") },
           ].map(({ icon: Icon, text }, i) => (
             <motion.div
               key={i}

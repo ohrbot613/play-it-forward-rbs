@@ -115,6 +115,9 @@ const translations = {
   "auth.sign_in_to_share": { en: "Sign in to share a game with your neighbors", he: "התחבר כדי לשתף משחק עם השכנים" },
   "auth.sign_in": { en: "Sign In", he: "התחבר" },
   "auth.community_stats": { en: "{games} games shared by {families} families", he: "{games} משחקים ששותפו על ידי {families} משפחות" },
+  "auth.feature_share": { en: "Share & borrow games from neighbors", he: "שתף ושאל משחקים מהשכנים" },
+  "auth.feature_trust": { en: "Trust-based neighborhood network", he: "רשת שכנים מבוססת אמון" },
+  "auth.feature_free": { en: "Completely free — community-run", he: "חינמי לגמרי — הקהילה מנהלת" },
 
   // Add game (bilingual)
   "add.title": { en: "Share a Game", he: "שתף משחק" },
@@ -141,6 +144,9 @@ const translations = {
   "add.whatsapp_notify": { en: "You'll get a WhatsApp message when someone wants it.", he: "תקבל הודעת וואטסאפ כשמישהו ירצה אותו." },
   "add.share_another": { en: "Share Another Game", he: "שתף משחק נוסף" },
   "add.identifying": { en: "Identifying game...", he: "מזהה משחק..." },
+  "add.saving": { en: "Saving your game...", he: "שומר את המשחק..." },
+  "add.save_error": { en: "Failed to save game. Please try again.", he: "שגיאה בשמירת המשחק. נסה שוב." },
+  "add.photo_too_large": { en: "Photo too large. Please use a photo under 2MB.", he: "התמונה גדולה מדי. אנא השתמש בתמונה מתחת ל-2MB." },
   "add.ai_filled": { en: "AI filled this in — tap to edit", he: "AI מילא את זה — לחץ לעריכה" },
   "add.ai_failed": { en: "Couldn't identify game — please fill in manually", he: "לא הצלחנו לזהות את המשחק — נא למלא ידנית" },
   "add.age_range": { en: "Age Range", he: "טווח גיל" },
@@ -225,6 +231,9 @@ const translations = {
   "wish.success_sub": { en: "The community will see it shortly.", he: "הקהילה תראה אותה בקרוב." },
   "wish.error": { en: "Something went wrong. Try again.", he: "משהו השתבש. נסה שוב." },
   "wish.cancel": { en: "Cancel", he: "ביטול" },
+  "wish.you": { en: "You", he: "אתה" },
+  "wish.match_found_title": { en: "Match in the library!", he: "נמצאה התאמה בספריה!" },
+  "wish.match_found_detail": { en: "{title} is held by {holder} in {neighborhood}. We've notified the coordinator!", he: "{title} נמצא אצל {holder} ב{neighborhood}. הודענו לרכז!" },
 
   // Profile fallback (mock)
   "profile.founding_member": { en: "Founding Member", he: "חבר מייסד" },
@@ -324,6 +333,8 @@ const translations = {
   "lb.become_courier": { en: "Want to join the leaderboard?", he: "רוצה להצטרף ללוח המובילים?" },
   "lb.become_courier_cta": { en: "Become a Relay Courier", he: "הפוך לשליח" },
   "lb.become_courier_sub": { en: "Deliver games between neighborhoods and earn badges!", he: "העבר משחקים בין שכונות וצבור תגים!" },
+  "lb.empty_title": { en: "Leaderboard coming soon", he: "הלוח יתמלא בקרוב" },
+  "lb.empty_subtitle": { en: "Once deliveries start, top couriers will appear here", he: "ברגע שמשלוחים יתחילו, המשלוחנים הטובים ביותר יופיעו כאן" },
 
   // Relay signup page
   "relay.title": { en: "Become a Relay Courier", he: "הפוך לשליח" },
@@ -359,6 +370,8 @@ const translations = {
   "badge.cross-neighborhood": { en: "Cross-Neighborhood", he: "חוצה שכונות" },
 
   // Profile quick-access links
+  "profile.yrs": { en: "yrs", he: "שנים" },
+  "profile.age_placeholder": { en: "Age", he: "גיל" },
   "profile.my_dashboard": { en: "My Dashboard", he: "לוח הבקרה שלי" },
   "profile.dashboard_sub": { en: "Manage requests, loans & inventory", he: "ניהול בקשות, השאלות ומלאי" },
   "profile.community_heroes": { en: "Community Heroes", he: "גיבורי הקהילה" },

@@ -287,8 +287,8 @@ export default function LeaderboardPage() {
           // Empty state — no real courier data yet
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-base font-medium text-foreground mb-1">{t("lb.empty_title") || "הלוח יתמלא בקרוב"}</p>
-            <p className="text-sm text-muted-foreground">{t("lb.empty_subtitle") || "ברגע שמשלוחים יתחילו, המשלוחנים הטובים ביותר יופיעו כאן"}</p>
+            <p className="text-base font-medium text-foreground mb-1">{t("lb.empty_title")}</p>
+            <p className="text-sm text-muted-foreground">{t("lb.empty_subtitle")}</p>
           </div>
         ) : (
           couriers.map((courier, i) => (

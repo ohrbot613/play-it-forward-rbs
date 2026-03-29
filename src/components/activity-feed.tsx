@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Package, UserPlus, Heart, Repeat, Gift, Star, Hand, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { MOCK_GAMES, MOCK_USERS } from "@/lib/data";
 import { getRecentActivity, type ActivityItem } from "@/lib/queries";
 
@@ -26,7 +26,7 @@ function hoursBack(hoursAgo: number): string {
   return new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
 }
 
-function timeAgo(timestamp: string): string {
+function timeAgo(timestamp: string, t: (key: TranslationKey, replacements?: Record<string, string | number>) => string): string {
   const now = new Date();
   const then = new Date(timestamp);
   const diffMs = now.getTime() - then.getTime();
@@ -34,10 +34,11 @@ function timeAgo(timestamp: string): string {
   const diffHr = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHr / 24);
 
-  if (diffMin < 60) return `לפני ${diffMin} דק׳`;
-  if (diffHr < 24) return `לפני ${diffHr} ש׳`;
-  if (diffDay === 1) return "אתמול";
-  return `לפני ${diffDay} ימים`;
+  if (diffMin < 60) return t("time.just_now");
+  if (diffHr < 24) return t("time.hr_ago", { count: diffHr });
+  if (diffDay === 1) return t("time.yesterday");
+  if (diffDay < 7) return t("time.days_ago", { count: diffDay });
+  return t("time.weeks_ago", { count: Math.floor(diffDay / 7) });
 }
 
 /** Pick a first-name initial from a full name. E.g. "Miriam Katz" → "Miriam K." */
@@ -184,7 +185,7 @@ export function ActivityFeed() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm leading-snug">{item.message}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-2xs text-muted-foreground">{timeAgo(item.timestamp)}</span>
+                  <span className="text-2xs text-muted-foreground">{timeAgo(item.timestamp, t)}</span>
                   <span className="text-2xs text-border">·</span>
                   <span className="text-2xs text-muted-foreground">{item.neighborhood}</span>
                 </div>

@@ -389,9 +389,13 @@ function AddWishModal({ isOpen, onClose, onSuccess, matchedGames }: AddWishModal
                   </div>
                   {matchedGames && matchedGames.length > 0 ? (
                     <>
-                      <p className="text-base font-semibold">🎯 Match in the library!</p>
+                      <p className="text-base font-semibold">🎯 {t("wish.match_found_title")}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {matchedGames[0].title} is held by {matchedGames[0].holderName} in {matchedGames[0].neighborhood}. We&apos;ve notified the coordinator!
+                        {t("wish.match_found_detail", {
+                          title: matchedGames[0].title,
+                          holder: matchedGames[0].holderName,
+                          neighborhood: matchedGames[0].neighborhood,
+                        })}
                       </p>
                     </>
                   ) : (
@@ -549,13 +553,13 @@ export default function RequestsPage() {
     const newWish: CommunityWish = {
       id: wish.id,
       requesterId: "local-user",
-      requesterName: "You",
+      requesterName: t("wish.you"),
       requesterAvatar: "https://api.dicebear.com/7.x/thumbs/svg?seed=local",
       neighborhood: wish.neighborhood,
       title: wish.gameTitle,
       description: wish.notes || "",
       category: "board-games",
-      ageRange: "All",
+      ageRange: t("category.all"),
       urgency: "normal",
       status: "open",
       createdAt: new Date().toISOString(),
