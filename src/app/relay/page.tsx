@@ -96,7 +96,7 @@ export default function RelaySignupPage() {
   }
 
   return (
-    <div dir={dir} className="min-h-screen bg-surface pb-20">
+    <div dir={dir} className="min-h-screen bg-surface">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-border/40 px-4 py-3 flex items-center gap-3">
         <button onClick={() => router.back()} className="p-1.5 rounded-full hover:bg-muted transition-colors">
@@ -265,7 +265,7 @@ export default function RelaySignupPage() {
                 <Input
                   value={availableHours}
                   onChange={e => setAvailableHours(e.target.value)}
-                  placeholder="e.g. Afternoons, Evenings"
+                  placeholder={t("relay.available_hours_placeholder")}
                   className="text-sm"
                 />
               </div>
