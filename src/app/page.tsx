@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { CATEGORIES, NEIGHBORHOODS, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
+import { CATEGORIES, NEIGHBORHOODS, SORT_OPTIONS, MOCK_GAMES, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
 import { fetchGames, fetchGameStats } from "@/lib/queries";
 import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,9 +59,15 @@ export default function HomePage() {
         setAllGames(liveGames);
         setTotalShares(liveGames.reduce((sum, g) => sum + g.handoffs, 0));
         setUsingLiveData(true);
+      } else {
+        // Fall back to mock catalog when Supabase is not configured (demo mode)
+        setAllGames(MOCK_GAMES);
+        setTotalShares(MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0));
       }
       setGamesLoading(false);
     }).catch(() => {
+      setAllGames(MOCK_GAMES);
+      setTotalShares(MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0));
       setGamesLoading(false);
     });
 
