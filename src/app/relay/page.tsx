@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase";
 import { fetchIsRelayVolunteer, registerAsRelay } from "@/lib/queries";
 import { useLanguage } from "@/lib/i18n";
+import { NEIGHBORHOODS } from "@/lib/data";
 import {
   Bike,
   Trophy,
@@ -24,8 +25,14 @@ import {
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 
-const NEIGHBORHOODS = ["Aleph", "Bet", "Gimmel", "Dalet", "Hey"] as const;
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+const DAYS = [
+  { key: "relay.day.sun", value: "Sun" },
+  { key: "relay.day.mon", value: "Mon" },
+  { key: "relay.day.tue", value: "Tue" },
+  { key: "relay.day.wed", value: "Wed" },
+  { key: "relay.day.thu", value: "Thu" },
+  { key: "relay.day.fri", value: "Fri" },
+] as const;
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -241,16 +248,16 @@ export default function RelaySignupPage() {
                   {DAYS.map(day => (
                     <button
                       type="button"
-                      key={day}
-                      onClick={() => toggleDay(day)}
+                      key={day.value}
+                      onClick={() => toggleDay(day.value)}
                       className={cn(
                         "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-                        selectedDays.includes(day)
+                        selectedDays.includes(day.value)
                           ? "bg-primary text-white border-primary"
                           : "bg-background border-border text-muted-foreground hover:border-primary"
                       )}
                     >
-                      {day}
+                      {t(day.key)}
                     </button>
                   ))}
                 </div>

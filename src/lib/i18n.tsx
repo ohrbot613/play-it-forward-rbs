@@ -366,6 +366,12 @@ const translations = {
   "relay.perk2": { en: "Climb the Community Heroes leaderboard", he: "טפס בטבלת גיבורי הקהילה" },
   "relay.perk3": { en: "Make games accessible to every family in RBS", he: "הפוך משחקים נגישים לכל משפחה ברמת בית שמש" },
   "relay.select_neighborhood": { en: "Select neighborhood", he: "בחר שכונה" },
+  "relay.day.sun": { en: "Sun", he: "א׳" },
+  "relay.day.mon": { en: "Mon", he: "ב׳" },
+  "relay.day.tue": { en: "Tue", he: "ג׳" },
+  "relay.day.wed": { en: "Wed", he: "ד׳" },
+  "relay.day.thu": { en: "Thu", he: "ה׳" },
+  "relay.day.fri": { en: "Fri", he: "ו׳" },
 
   // Badge names (bilingual)
   "badge.first-delivery": { en: "First Delivery", he: "משלוח ראשון" },
