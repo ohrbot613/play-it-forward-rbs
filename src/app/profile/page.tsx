@@ -57,6 +57,14 @@ import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 // This ID is never used in production — demoMode is false whenever Supabase is available
 const DEMO_USER_ID = process.env.NODE_ENV !== "production" ? "u1" : null;
 
+const STATUS_LABEL_KEYS: Record<string, "status.pending" | "status.active" | "status.completed" | "status.cancelled" | "status.accepted"> = {
+  pending: "status.pending",
+  active: "status.active",
+  completed: "status.completed",
+  cancelled: "status.cancelled",
+  accepted: "status.accepted",
+};
+
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -502,8 +510,8 @@ export default function ProfilePage() {
         )}
       </motion.div>
 
-      {/* Recommendations */}
-      {recommendations.length > 0 &&
+      {/* Recommendations — only shown in demo mode (uses mock catalog) */}
+      {demoMode && recommendations.length > 0 &&
         (kidAges.length > 0 || preferredCategories.length > 0) && (
           <motion.div {...fadeUp} transition={{ delay: 0.22 }} className="mb-6">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -644,7 +652,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
                     <p className="text-2xs text-muted-foreground">
-                      {t("profile.borrowed_from", { name: req.lenderName })} · {req.status}
+                      {t("profile.borrowed_from", { name: req.lenderName })} · {t(STATUS_LABEL_KEYS[req.status] ?? "status.pending")}
                     </p>
                   </div>
                 </CardContent>
@@ -683,7 +691,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{req.gameTitle}</h3>
                     <p className="text-2xs text-muted-foreground">
-                      {t("profile.lent_to", { name: req.borrowerName })} · {req.status}
+                      {t("profile.lent_to", { name: req.borrowerName })} · {t(STATUS_LABEL_KEYS[req.status] ?? "status.pending")}
                     </p>
                   </div>
                 </CardContent>

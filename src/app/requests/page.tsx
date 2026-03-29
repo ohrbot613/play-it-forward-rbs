@@ -37,7 +37,7 @@ import { useLanguage } from "@/lib/i18n";
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const NEIGHBORHOODS = ["Aleph", "Bet", "Gimmel", "Dalet", "Hey"] as const;
+const NEIGHBORHOODS = ["RBS Aleph", "RBS Bet", "RBS Gimmel", "Old Beit Shemesh"] as const;
 type Neighborhood = (typeof NEIGHBORHOODS)[number];
 
 // ─────────────────────────────────────────────────────────────────────────────

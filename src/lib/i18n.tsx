@@ -377,6 +377,13 @@ const translations = {
   "badge.speed-demon": { en: "Speed Demon", he: "מהיר כברק" },
   "badge.cross-neighborhood": { en: "Cross-Neighborhood", he: "חוצה שכונות" },
 
+  // Loan / request status labels
+  "status.pending": { en: "Pending", he: "ממתין" },
+  "status.active": { en: "Active loan", he: "מושאל" },
+  "status.completed": { en: "Returned", he: "הוחזר" },
+  "status.cancelled": { en: "Cancelled", he: "בוטל" },
+  "status.accepted": { en: "Accepted", he: "אושר" },
+
   // Profile quick-access links
   "profile.yrs": { en: "yrs", he: "שנים" },
   "profile.age_placeholder": { en: "Age", he: "גיל" },
