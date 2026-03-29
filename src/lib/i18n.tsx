@@ -280,6 +280,8 @@ const translations = {
   "map.no_token_title": { en: "Neighborhood Map", he: "מפת השכונות" },
   "map.no_token_coming_soon": { en: "Coming soon", he: "בקרוב" },
   "map.no_token_neighborhoods": { en: "Neighborhoods: Aleph · Bet · Gimmel · Dalet · Hey", he: "שכונות: אלף · בית · גימל · דלת · הא" },
+  "map.no_token_subtitle": { en: "Games by neighborhood", he: "משחקים לפי שכונה" },
+  "map.available_label": { en: "available", he: "זמינים" },
 
   // Time
   "time.just_now": { en: "just now", he: "כרגע" },

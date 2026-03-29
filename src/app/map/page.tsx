@@ -8,6 +8,8 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
   CATEGORIES,
+  NEIGHBORHOODS,
+  MOCK_GAMES,
   getCategoryEmoji,
   getCategoryLabel,
   formatDistance,
@@ -676,14 +678,53 @@ export default function MapPage() {
         )}
       </AnimatePresence>
 
-      {/* No token fallback — clean demo-safe placeholder */}
+      {/* No token fallback — neighborhood grid showing game distribution */}
       {!hasToken && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background z-50">
-          <div className="text-center p-8">
-            <MapPin className="h-14 w-14 text-primary/30 mx-auto mb-4" />
-            <h3 className="font-bold text-xl mb-1">{t("map.no_token_title")}</h3>
-            <p className="text-sm text-primary font-medium mb-3">{t("map.no_token_coming_soon")}</p>
-            <p className="text-xs text-muted-foreground">{t("map.no_token_neighborhoods")}</p>
+        <div className="absolute inset-0 overflow-y-auto bg-background z-50 pb-24">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h2 className="font-bold text-lg">{t("map.no_token_title")}</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-5">{t("map.no_token_subtitle")}</p>
+            <div className="grid grid-cols-2 gap-3">
+              {NEIGHBORHOODS.map((hood) => {
+                // game.neighborhood is enriched from owner in data.ts
+                const count = MOCK_GAMES.filter((g) => (g as any).neighborhood === hood).length;
+                const available = MOCK_GAMES.filter(
+                  (g) => (g as any).neighborhood === hood && g.available
+                ).length;
+                const heNames: Record<string, string> = {
+                  "RBS Aleph": "א׳",
+                  "RBS Bet": "ב׳",
+                  "RBS Gimmel": "ג׳",
+                  "RBS Dalet": "ד׳",
+                  "RBS Hey": "ה׳",
+                  "Old Beit Shemesh": "בית שמש ותיקה",
+                };
+                const shortName = hood.replace("RBS ", "").replace("Old Beit Shemesh", "Old BS");
+                return (
+                  <Link key={hood} href={`/?neighborhood=${encodeURIComponent(hood)}`}>
+                    <motion.div
+                      whileTap={{ scale: 0.97 }}
+                      className="bg-card rounded-2xl p-4 elevation-1 border border-border/30 cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-bold text-sm leading-tight">{shortName}</p>
+                          <p className="text-[10px] text-muted-foreground">{heNames[hood] ?? ""}</p>
+                        </div>
+                        <span className="text-xl">🏘️</span>
+                      </div>
+                      <p className="text-2xl font-bold text-primary">{count}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {available} {t("map.available_label")}
+                      </p>
+                    </motion.div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
