@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { getTopCouriers, type CourierProfile, type BadgeId } from "@/lib/data";
+import { type CourierProfile, type BadgeId } from "@/lib/data";
 import { fetchTopCouriers, type CourierStat } from "@/lib/queries";
 import { CourierBadge } from "@/components/courier-badge";
 import { useLanguage } from "@/lib/i18n";
@@ -193,32 +193,31 @@ function CourierRow({
 
 export default function LeaderboardPage() {
   const [liveStats, setLiveStats] = useState<CourierStat[]>([]);
-  const mockCouriers = getTopCouriers(10);
+  const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
 
   useEffect(() => {
-    fetchTopCouriers(10).then((data) => {
-      if (data.length > 0) setLiveStats(data);
-    });
+    fetchTopCouriers(10)
+      .then((data) => {
+        if (data.length > 0) setLiveStats(data);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  // Use real data if available, fall back to mock
-  // Map CourierStat → CourierProfile shape (streak/badge fields default to 0/[])
-  const couriers: CourierProfile[] = liveStats.length > 0
-    ? liveStats.map((s) => ({
-        id: s.id,
-        name: s.name,
-        avatar: s.avatar,
-        neighborhood: s.neighborhood,
-        totalDeliveries: s.totalDeliveries,
-        currentStreak: 0,
-        longestStreak: 0,
-        badges: [] as BadgeId[],
-        joinedAt: s.joinedAt,
-        lastDeliveryAt: s.joinedAt,
-        gamesDelivered: [],
-      }))
-    : mockCouriers;
+  // Only use real data — never fall back to mock couriers in production
+  const couriers: CourierProfile[] = liveStats.map((s) => ({
+    id: s.id,
+    name: s.name,
+    avatar: s.avatar,
+    neighborhood: s.neighborhood,
+    totalDeliveries: s.totalDeliveries,
+    currentStreak: 0,
+    longestStreak: 0,
+    badges: [] as BadgeId[],
+    joinedAt: s.joinedAt,
+    lastDeliveryAt: s.joinedAt,
+    gamesDelivered: [],
+  }));
 
   const totalDeliveries = couriers.reduce((s, c) => s + c.totalDeliveries, 0);
   const totalStreakDays = couriers.reduce((s, c) => s + c.currentStreak, 0);
@@ -271,14 +270,36 @@ export default function LeaderboardPage() {
 
       {/* Leaderboard list */}
       <div className="space-y-2">
-        {couriers.map((courier, i) => (
-          <CourierRow
-            key={courier.id}
-            courier={courier}
-            rank={i + 1}
-            index={i}
-          />
-        ))}
+        {loading ? (
+          // Loading skeleton
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="rounded-2xl bg-white dark:bg-white/5 p-4 animate-pulse flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-muted" />
+              <div className="h-10 w-10 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-24 rounded bg-muted" />
+                <div className="h-2 w-16 rounded bg-muted" />
+              </div>
+              <div className="h-4 w-10 rounded bg-muted" />
+            </div>
+          ))
+        ) : couriers.length === 0 ? (
+          // Empty state — no real courier data yet
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <p className="text-base font-medium text-foreground mb-1">{t("lb.empty_title") || "הלוח יתמלא בקרוב"}</p>
+            <p className="text-sm text-muted-foreground">{t("lb.empty_subtitle") || "ברגע שמשלוחים יתחילו, המשלוחנים הטובים ביותר יופיעו כאן"}</p>
+          </div>
+        ) : (
+          couriers.map((courier, i) => (
+            <CourierRow
+              key={courier.id}
+              courier={courier}
+              rank={i + 1}
+              index={i}
+            />
+          ))
+        )}
       </div>
 
       {/* CTA to become a courier */}
