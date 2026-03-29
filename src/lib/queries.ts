@@ -134,6 +134,7 @@ function mapGame(row: DbGame): Game {
     lentSince: row.lent_since ?? undefined,
     available: row.is_available,
     requestCount: row.request_count,
+    neighborhood: location?.neighborhood ?? (row.owner as DbMember | null)?.neighborhood ?? undefined,
   };
 }
 

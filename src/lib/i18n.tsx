@@ -18,6 +18,13 @@ const translations = {
   // Categories
   "category.all": { en: "All", he: "הכל" },
 
+  // Neighborhoods
+  "neighborhood.all": { en: "All Areas", he: "כל האזורים" },
+  "neighborhood.rbs_aleph": { en: "RBS Aleph", he: "א׳" },
+  "neighborhood.rbs_bet": { en: "RBS Bet", he: "ב׳" },
+  "neighborhood.rbs_gimmel": { en: "RBS Gimmel", he: "ג׳" },
+  "neighborhood.old_bs": { en: "Old BS", he: "בית שמש" },
+
   // Filters
   "filter.available_only": { en: "Available only", he: "זמינים בלבד" },
   "filter.all_games": { en: "All games", he: "כל המשחקים" },

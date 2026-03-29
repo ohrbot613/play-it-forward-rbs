@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { CATEGORIES, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
+import { CATEGORIES, NEIGHBORHOODS, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
 import { fetchGames, fetchGameStats } from "@/lib/queries";
 import { Search, X, ChevronDown, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,13 @@ const DISTANCE_OPTIONS = [
   { label: "10km+", value: "all" as const },
 ];
 
+const NEIGHBORHOOD_KEYS: Record<string, string> = {
+  "RBS Aleph": "neighborhood.rbs_aleph",
+  "RBS Bet": "neighborhood.rbs_bet",
+  "RBS Gimmel": "neighborhood.rbs_gimmel",
+  "Old Beit Shemesh": "neighborhood.old_bs",
+};
+
 const SORT_KEYS: Record<string, string> = {
   closest: "sort.closest",
   newest: "sort.newest",
@@ -32,6 +39,7 @@ const SORT_KEYS: Record<string, string> = {
 export default function HomePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<GameCategory | "all">("all");
+  const [neighborhood, setNeighborhood] = useState<typeof NEIGHBORHOODS[number] | "all">("all");
   const [sort, setSort] = useState<SortOption>("closest");
   const [maxDistance, setMaxDistance] = useState<number | "all">("all");
   const [availableOnly, setAvailableOnly] = useState(false);
@@ -69,6 +77,10 @@ export default function HomePage() {
       filtered = filtered.filter((g) => g.category === category);
     }
 
+    if (neighborhood !== "all") {
+      filtered = filtered.filter((g) => g.neighborhood === neighborhood);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -100,7 +112,7 @@ export default function HomePage() {
     }
 
     return sorted;
-  }, [allGames, search, category, sort, maxDistance, availableOnly]);
+  }, [allGames, search, category, neighborhood, sort, maxDistance, availableOnly]);
 
   return (
     <div className="px-4">
@@ -188,6 +200,43 @@ export default function HomePage() {
               onClick={() => setCategory(c.value)}
             >
               {c.emoji ? `${c.emoji} ` : ""}{c.value === "all" ? c.label : c.label}
+            </button>
+          );
+        })}
+      </motion.div>
+
+      {/* Neighborhood Filter */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.16 }}
+        className="mb-3 flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
+      >
+        <button
+          className={cn(
+            "shrink-0 px-3.5 py-1.5 rounded-full text-2xs font-medium transition-all duration-200",
+            neighborhood === "all"
+              ? "bg-primary text-white elevation-2"
+              : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+          )}
+          onClick={() => setNeighborhood("all")}
+        >
+          {t("neighborhood.all")}
+        </button>
+        {NEIGHBORHOODS.map((n) => {
+          const isActive = neighborhood === n;
+          return (
+            <button
+              key={n}
+              className={cn(
+                "shrink-0 px-3.5 py-1.5 rounded-full text-2xs font-medium transition-all duration-200",
+                isActive
+                  ? "bg-primary text-white elevation-2"
+                  : "bg-white text-muted-foreground elevation-1 hover:elevation-2"
+              )}
+              onClick={() => setNeighborhood(n)}
+            >
+              {NEIGHBORHOOD_KEYS[n] ? t(NEIGHBORHOOD_KEYS[n] as never) : n}
             </button>
           );
         })}

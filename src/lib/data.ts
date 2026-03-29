@@ -85,6 +85,7 @@ export interface Game {
   requestCount: number;
   piecesComplete?: boolean;
   missingPiecesNote?: string;
+  neighborhood?: string;
 }
 
 export interface GameRequest {
@@ -1698,6 +1699,12 @@ export const MOCK_GAMES: Game[] = [
     requestCount: 0,
   },
 ];
+
+// Enrich mock games with neighborhood from owner
+for (const game of MOCK_GAMES) {
+  const owner = MOCK_USERS.find((u) => u.id === game.ownerId);
+  if (owner) game.neighborhood = owner.neighborhood;
+}
 
 // ─── MOCK REVIEWS ──────────────────────────────────────────────────────
 
