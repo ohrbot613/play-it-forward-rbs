@@ -153,6 +153,29 @@ export default function HomePage() {
         </div>
       </motion.div>
 
+      {/* How It Works — compact first-visit explainer */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        className="mb-5"
+      >
+        <div className={cn("flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1", lang === "he" && "flex-row-reverse")}>
+          {[
+            { step: "1", icon: "🔍", en: "Browse games", he: "מצא משחק" },
+            { step: "2", icon: "📩", en: "Request to borrow", he: "בקש להשאיל" },
+            { step: "3", icon: "🎲", en: "Play & return", he: "שחק והחזר" },
+          ].map((item, i) => (
+            <div key={item.step} className={cn("flex items-center gap-1.5 shrink-0", i < 2 && "after:content-['→'] after:text-muted-foreground/40 after:text-xs after:mx-0.5", lang === "he" && i < 2 && "after:content-['←']")}>
+              <span className="flex items-center gap-1 bg-muted/60 rounded-full px-3 py-1.5 text-xs font-medium text-foreground/80">
+                <span>{item.icon}</span>
+                <span>{lang === "he" ? item.he : item.en}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Search Bar */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
