@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  MOCK_WISHES,
   CATEGORIES,
   URGENCY_CONFIG,
   getCategoryEmoji,
@@ -526,12 +525,10 @@ export default function RequestsPage() {
     setWishesLoading(true);
     fetchCommunityWishes()
       .then((rows) => {
-        // Use real rows if available, otherwise fall back to mock data
-        setDbWishes(rows.length > 0 ? rows : MOCK_WISHES);
+        setDbWishes(rows);
       })
       .catch(() => {
-        // Network/DB error — fall back to mock data
-        setDbWishes(MOCK_WISHES);
+        setDbWishes([]);
       })
       .finally(() => {
         setWishesLoading(false);

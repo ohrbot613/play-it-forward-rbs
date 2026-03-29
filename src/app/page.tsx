@@ -4,9 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/game-card";
-import { MOCK_GAMES, CATEGORIES, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
+import { CATEGORIES, SORT_OPTIONS, getDistance, type Game, type GameCategory, type SortOption } from "@/lib/data";
 import { fetchGames, fetchGameStats } from "@/lib/queries";
-import { Search, X, ChevronDown, Sparkles } from "lucide-react";
+import { Search, X, ChevronDown, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed } from "@/components/activity-feed";
 import { useLanguage } from "@/lib/i18n";
@@ -36,12 +36,11 @@ export default function HomePage() {
   const [availableOnly, setAvailableOnly] = useState(false);
   const { t, lang } = useLanguage();
 
-  // Real data from Supabase; falls back to mock data when not configured
-  const [allGames, setAllGames] = useState<Game[]>(MOCK_GAMES);
-  const [totalShares, setTotalShares] = useState(() =>
-    MOCK_GAMES.reduce((sum, g) => sum + g.handoffs, 0)
-  );
+  // Real data from Supabase
+  const [allGames, setAllGames] = useState<Game[]>([]);
+  const [totalShares, setTotalShares] = useState(0);
   const [usingLiveData, setUsingLiveData] = useState(false);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   useEffect(() => {
     fetchGames().then((liveGames) => {
@@ -50,6 +49,9 @@ export default function HomePage() {
         setTotalShares(liveGames.reduce((sum, g) => sum + g.handoffs, 0));
         setUsingLiveData(true);
       }
+      setGamesLoading(false);
+    }).catch(() => {
+      setGamesLoading(false);
     });
 
     fetchGameStats().then(({ totalShares: shares, totalGames }) => {
@@ -272,7 +274,17 @@ export default function HomePage() {
       <ActivityFeed />
 
       <AnimatePresence>
-        {games.length === 0 && (
+        {gamesLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="mt-16 flex justify-center pb-8"
+          >
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </motion.div>
+        )}
+        {!gamesLoading && games.length === 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

@@ -9,7 +9,6 @@ import { createClient } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { MOCK_GAMES } from "@/lib/data";
 import { fetchGameStats } from "@/lib/queries";
 
 export default function SignInPage() {
@@ -70,13 +69,17 @@ function SignInContent() {
     }
   };
 
-  const [totalGames, setTotalGames] = useState(MOCK_GAMES.length);
-  const [totalFamilies, setTotalFamilies] = useState(new Set(MOCK_GAMES.map((g) => g.ownerId)).size);
+  const [totalGames, setTotalGames] = useState(0);
+  const [totalFamilies, setTotalFamilies] = useState(0);
+  const [statsReady, setStatsReady] = useState(false);
 
   useEffect(() => {
     fetchGameStats().then(({ totalGames: liveCount, totalMembers }) => {
       if (liveCount > 0) setTotalGames(liveCount);
       if (totalMembers > 0) setTotalFamilies(totalMembers);
+      setStatsReady(true);
+    }).catch(() => {
+      setStatsReady(true);
     });
   }, []);
 
@@ -150,16 +153,18 @@ function SignInContent() {
         </motion.div>
 
         {/* Community stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mb-6"
-        >
-          <p className="text-xs text-muted-foreground">
-            {t("auth.community_stats", { games: String(totalGames), families: String(totalFamilies) })}
-          </p>
-        </motion.div>
+        {statsReady && totalGames > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center mb-6"
+          >
+            <p className="text-xs text-muted-foreground">
+              {t("auth.community_stats", { games: String(totalGames), families: String(totalFamilies) })}
+            </p>
+          </motion.div>
+        )}
       </div>
 
       {/* Bottom: Sign-in section */}

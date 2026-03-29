@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Gift, Repeat, Star, MapPin, Clock, Heart } from "lucide-react";
-import { getGame, getUser } from "@/lib/data";
+import { getGame } from "@/lib/data";
 import { fetchGame, fetchGameJourney, type JourneyEntry } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -22,66 +22,6 @@ function getNeighborhoodStyle(neighborhood: string) {
   return NEIGHBORHOOD_COLORS[neighborhood] ?? { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-400" };
 }
 
-function getMockJourney(gameTitle: string, ownerId: string): JourneyEntry[] {
-  const owner = getUser(ownerId);
-  return [
-    {
-      id: "j1",
-      type: "donated",
-      personName: owner?.name ?? "Anonymous",
-      personInitials: (owner?.name ?? "A").split(" ").map(n => n[0]).join(""),
-      neighborhood: owner?.neighborhood ?? "RBS Aleph",
-      date: "2025-11-02",
-      note: `Donated ${gameTitle} so other families could enjoy it too!`,
-      avatarColor: "bg-emerald-500",
-    },
-    {
-      id: "j2",
-      type: "borrowed",
-      personName: "Devorah Goldstein",
-      personInitials: "DG",
-      neighborhood: "RBS Bet",
-      date: "2025-11-15",
-      duration: "3 weeks",
-      rating: 5,
-      note: "Kids absolutely loved it! Shabbos afternoons were transformed.",
-      avatarColor: "bg-sky-500",
-    },
-    {
-      id: "j3",
-      type: "borrowed",
-      personName: "Yoel & Shira Friedman",
-      personInitials: "YF",
-      neighborhood: "RBS Aleph",
-      date: "2025-12-10",
-      duration: "2 weeks",
-      rating: 4,
-      note: "Great family game. Missing one instruction card but still playable.",
-      avatarColor: "bg-amber-500",
-    },
-    {
-      id: "j4",
-      type: "borrowed",
-      personName: "Rivka Stern",
-      personInitials: "RS",
-      neighborhood: "RBS Gimmel",
-      date: "2026-01-05",
-      duration: "4 weeks",
-      rating: 5,
-      note: "We played every single night of Chanukah vacation!",
-      avatarColor: "bg-purple-500",
-    },
-    {
-      id: "j5",
-      type: "current",
-      personName: "Chana Rubin",
-      personInitials: "CR",
-      neighborhood: "RBS Bet",
-      date: "2026-03-01",
-      avatarColor: "bg-coral",
-    },
-  ];
-}
 
 function formatDate(dateStr: string, lang: string): string {
   return new Date(dateStr).toLocaleDateString(lang === "he" ? "he-IL" : "en-IL", {
