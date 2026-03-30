@@ -34,6 +34,12 @@ export default function GameDetailPage() {
   // ── Relay volunteers state ────────────────────────────────────────────
   const [relayVolunteers, setRelayVolunteers] = useState<VolunteerCourier[]>([]);
 
+  // ── Requester coords for relay destination ────────────────────────────
+  // TODO: replace with proper requester profile once borrow-request flow
+  //       passes requester_id through; for now we use the logged-in user's
+  //       member row lat/lng, falling back to RBS_CENTER.
+  const [requesterCoords, setRequesterCoords] = useState<{ lat: number; lng: number }>(RBS_CENTER);
+
   // ── Reviews state ────────────────────────────────────────────────────
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -57,6 +63,18 @@ export default function GameDetailPage() {
         if (supabase?.auth) {
           const { data: { user } } = await supabase.auth.getUser();
           if (!cancelled) setIsLoggedIn(!!user);
+
+          // Fetch the logged-in member's lat/lng to use as relay destination
+          if (user && supabase) {
+            const { data: memberRow } = await supabase
+              .from("members")
+              .select("lat, lng")
+              .eq("auth_user_id", user.id)
+              .single();
+            if (!cancelled && memberRow?.lat != null && memberRow?.lng != null) {
+              setRequesterCoords({ lat: memberRow.lat as number, lng: memberRow.lng as number });
+            }
+          }
         }
 
         const [dbGame, realReviews, realRelays] = await Promise.all([
@@ -175,7 +193,7 @@ export default function GameDetailPage() {
 
   const relayRoute = bestRelayRoute(
     { lat: game.currentHolder.lat, lng: game.currentHolder.lng },
-    RBS_CENTER,
+    requesterCoords,
     relayVolunteers
   );
 
