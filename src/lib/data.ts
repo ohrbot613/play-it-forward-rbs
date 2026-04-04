@@ -1859,7 +1859,7 @@ export function getCityLeaderboard(city: string): CityLeaderboard {
 }
 
 export function getRecommendedGames(userPrefs: { kidAges?: number[]; preferredCategories?: GameCategory[] }, limit = 10): Game[] {
-  let scored = MOCK_GAMES.filter(g => g.available).map(game => {
+  const scored = MOCK_GAMES.filter(g => g.available).map(game => {
     let score = 0;
     // Category match
     if (userPrefs.preferredCategories?.includes(game.category)) score += 3;
